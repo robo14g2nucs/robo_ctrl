@@ -38,8 +38,8 @@ public:
 
 	motor_controller() : ticks(360), b(0.206), r(0.0485), control_frequency(10.0)
 	{
-		Kp[0] = 0.09;
-		Kp[1] = 0.09;
+		Kp[0] = 0.1;
+		Kp[1] = 0.1;
 		Ti[0] = 0.09;
 		Ti[1] = 0.09;
 		wlr_[0] = 0;
