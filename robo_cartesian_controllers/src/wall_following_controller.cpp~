@@ -23,7 +23,7 @@ public:
 	double w; // angular_vel
 
 
-	wall_following_controller_node() : alpha(0.0275), v(0.15), w(0)
+	wall_following_controller_node() : alpha(0.0275), v(0.2), w(0)
 	{
 		n_ = ros::NodeHandle("~");
 		ir_reader_subscriber_ = n_.subscribe("/ir_reader_node/cdistance", 1, &wall_following_controller_node::irCallback, this);

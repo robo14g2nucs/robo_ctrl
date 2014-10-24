@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- execute ir_reader -->
+  <node pkg="ir_reader" type="ir_reader_node" name="ir_reader_node" />
+
+  <!-- execute wall_following_controller -->
+  <node pkg="robo_cartesian_controllers" type="wall_following_controller" name="wall_following_controller" />
+
+  <!-- execute PI controller -->
+  <node pkg="robo_motor_picontroller" type="robo_motor_picontroller_node" name="robo_motor_picontroller_node" />
+
+</launch>

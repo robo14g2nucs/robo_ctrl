@@ -41,7 +41,7 @@ public:
 		Kp[0] = 1.085; //0.09;
 		Kp[1] = 1.14;//0.103;
 		Ti[0] = 0.103;//0.09;
-		Ti[1] = 0.106;//0.0855;
+		Ti[1] = 0.1075;//0.0855;
 		wlr_[0] = 0;
 		wlr_[1] = 0;
 		pwm_[0] = 0;
@@ -90,8 +90,8 @@ public:
 		delta_encoder[0] = (double) motor_controller::encoder_[3];
 		delta_encoder[1] = (double) motor_controller::encoder_[2];
 
-//		std::cerr << "delta_encoder[0] = " << delta_encoder[0] << std::endl;
-//		std::cerr << "delta_encoder[1] = " << delta_encoder[1] << std::endl;
+		std::cerr << "delta_encoder[0] = " << delta_encoder[0] << std::endl;
+		std::cerr << "delta_encoder[1] = " << delta_encoder[1] << std::endl;
 
 		/*
 		estimated_w = (delta_encoder*2*pi*control_frequency)/(ticks_per_rev)
@@ -122,23 +122,23 @@ public:
 			actual_pwm[i] = pwm_[i];
 		}
 		
-//		std::cerr << "Ti[1] is " << Ti[1] << std::endl;
-//		std::cerr << "du[0] is " << du[0] << std::endl;
-//		std::cerr << "du[1] is " << du[1] << std::endl;
-//		std::cerr << "difference for left wheel is " << wlr_[0] << "-" << estimated_w_[0] << std::endl;
-//		std::cerr << "difference for right wheel is " << wlr_[1] << "-" << estimated_w_[1] << std::endl;
-//		std::cerr << "Left W: " << estimated_w_[0] << std::endl;
-//		std::cerr << "Right W: " << estimated_w_[1] << std::endl;
-//		std::cerr << "wl: " << wlr_[0] << std::endl;
-//		std::cerr << "wr: " << wlr_[1] << std::endl;
+		std::cerr << "Ti[1] is " << Ti[1] << std::endl;
+		std::cerr << "du[0] is " << du[0] << std::endl;
+		std::cerr << "du[1] is " << du[1] << std::endl;
+		std::cerr << "difference for left wheel is " << wlr_[0] << "-" << estimated_w_[0] << std::endl;
+		std::cerr << "difference for right wheel is " << wlr_[1] << "-" << estimated_w_[1] << std::endl;
+		std::cerr << "Left W: " << estimated_w_[0] << std::endl;
+		std::cerr << "Right W: " << estimated_w_[1] << std::endl;
+		std::cerr << "wl: " << wlr_[0] << std::endl;
+		std::cerr << "wr: " << wlr_[1] << std::endl;
 	}
 
 	void publish()
 	{
 		wheels_ang_vel();
 
-//		std::cerr << "Left Wheel: " << wlr_[0] << std::endl;
-//		std::cerr << "Right Wheel: " << wlr_[1] << std::endl;
+		std::cerr << "Left Wheel: " << wlr_[0] << std::endl;
+		std::cerr << "Right Wheel: " << wlr_[1] << std::endl;
 
 		computePwm();
 
