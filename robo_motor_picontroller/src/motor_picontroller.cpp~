@@ -7,8 +7,8 @@
 #include <sstream>
 #include <iostream>
 #include <cmath>
+#include <robo_globals.h>
 
-static const double pi = acos(-1.0);
 
 class motor_controller
 {
@@ -36,12 +36,12 @@ public:
 	const double b; // separation of the two central wheels in [m]
 	const double r; //  wheel radius in [m]
 
-	motor_controller() : ticks(360), b(0.206), r(0.0485), control_frequency(10.0)
+	motor_controller() : ticks(TICKSPR), b(WHEEL_BASE), r(WHEEL_RADIUS), control_frequency(CTRL_FREQ)
 	{
 		Kp[0] = 1.085; //0.09;
 		Kp[1] = 1.14;//0.103;
 		Ti[0] = 0.103;//0.09;
-		Ti[1] = 0.1075;//0.0855;
+		Ti[1] = 0.106;//0.0855;
 		wlr_[0] = 0;
 		wlr_[1] = 0;
 		pwm_[0] = 0;
@@ -90,17 +90,17 @@ public:
 		delta_encoder[0] = (double) motor_controller::encoder_[3];
 		delta_encoder[1] = (double) motor_controller::encoder_[2];
 
-		std::cerr << "delta_encoder[0] = " << delta_encoder[0] << std::endl;
-		std::cerr << "delta_encoder[1] = " << delta_encoder[1] << std::endl;
+//		std::cerr << "delta_encoder[0] = " << delta_encoder[0] << std::endl;
+//		std::cerr << "delta_encoder[1] = " << delta_encoder[1] << std::endl;
 
 		/*
-		estimated_w = (delta_encoder*2*pi*control_frequency)/(ticks_per_rev)
+		estimated_w = (delta_encoder*2*PI*control_frequency)/(ticks_per_rev)
 		pwm = pwm + alpha*(desired_w - estimated_w)
 		*/
 
 		for (int i = 0;i<2;++i) {
 			// Estimation
-			estimated_w_[i] = (delta_encoder[i]*2*pi*control_frequency)/ticks;
+			estimated_w_[i] = (delta_encoder[i]*2*PI*control_frequency)/ticks;
 
 			// Error calculation
 			e[i] = wlr_[i] - estimated_w_[i];
@@ -122,23 +122,23 @@ public:
 			actual_pwm[i] = pwm_[i];
 		}
 		
-		std::cerr << "Ti[1] is " << Ti[1] << std::endl;
-		std::cerr << "du[0] is " << du[0] << std::endl;
-		std::cerr << "du[1] is " << du[1] << std::endl;
-		std::cerr << "difference for left wheel is " << wlr_[0] << "-" << estimated_w_[0] << std::endl;
-		std::cerr << "difference for right wheel is " << wlr_[1] << "-" << estimated_w_[1] << std::endl;
-		std::cerr << "Left W: " << estimated_w_[0] << std::endl;
-		std::cerr << "Right W: " << estimated_w_[1] << std::endl;
-		std::cerr << "wl: " << wlr_[0] << std::endl;
-		std::cerr << "wr: " << wlr_[1] << std::endl;
+//		std::cerr << "Ti[1] is " << Ti[1] << std::endl;
+//		std::cerr << "du[0] is " << du[0] << std::endl;
+//		std::cerr << "du[1] is " << du[1] << std::endl;
+//		std::cerr << "difference for left wheel is " << wlr_[0] << "-" << estimated_w_[0] << std::endl;
+//		std::cerr << "difference for right wheel is " << wlr_[1] << "-" << estimated_w_[1] << std::endl;
+//		std::cerr << "Left W: " << estimated_w_[0] << std::endl;
+//		std::cerr << "Right W: " << estimated_w_[1] << std::endl;
+//		std::cerr << "wl: " << wlr_[0] << std::endl;
+//		std::cerr << "wr: " << wlr_[1] << std::endl;
 	}
 
 	void publish()
 	{
 		wheels_ang_vel();
 
-		std::cerr << "Left Wheel: " << wlr_[0] << std::endl;
-		std::cerr << "Right Wheel: " << wlr_[1] << std::endl;
+//		std::cerr << "Left Wheel: " << wlr_[0] << std::endl;
+//		std::cerr << "Right Wheel: " << wlr_[1] << std::endl;
 
 		computePwm();
 
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
   while (ros::ok())
 	{
 		motor_controller_node.publish();
-		ros::spinOnce();
+		ros::sPInOnce();
 		loop_rate.sleep();
   }
 
