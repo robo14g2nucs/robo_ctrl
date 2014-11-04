@@ -142,8 +142,8 @@ public:
 
 		computePwm();
 
-		std::cerr << "Left PWM: " << pwm_[0] << std::endl;
-		std::cerr << "Right PWM: " << pwm_[1] << std::endl;
+		//std::cerr << "Left PWM: " << pwm_[0] << std::endl;
+		//std::cerr << "Right PWM: " << pwm_[1] << std::endl;
 
 		ras_arduino_msgs::PWM msg;
 		msg.PWM1 = (int)pwm_[0];

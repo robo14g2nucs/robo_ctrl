@@ -3,6 +3,8 @@
 #include <geometry_msgs/Twist.h>
 
 
+#define MINDIST 9	//9 centimeters
+#define STOPDIST 12	//12 centimeters
 
 
 class wall_following_controller_node
@@ -47,7 +49,21 @@ public:
 	// Compute angular velocity
 	void computeAngVel ()
 	{
-		w = alpha * (ir_[0] - ir_[1]); // angular_vel = alpha*( distance_sensor1 - distance_sensor2)
+		w = alpha * (ir_[0] - ir_[1]);// [m/s]
+		// angular_vel = alpha*( distance_sensor1 - distance_sensor2)
+		if (ir_[4]>STOPDIST)
+		{
+			msg.linear.x = v;
+			msg.angular.z = w; // [rad/s]
+			ROS_INFO("front distance [%lf]", ir_[4]);
+		}
+		else
+		{
+			msg.linear.x = 0;
+			msg.angular.z = 0;
+			ROS_INFO("front distance 0 [%lf]", ir_[4]);
+		}
+	//	w = alpha * (MINDIST-0.5(ir_[0]+ir_[1]) + 2*(ir[0]-ir[1]));
 		ROS_INFO("w: [%lf]", w);
 
 	}
@@ -55,8 +71,7 @@ public:
 	void publish()
 	{
 		computeAngVel();
-		msg.linear.x = v; // [m/s]
-		msg.angular.z = w; // [rad/s]
+
 		twist_publisher_.publish(msg);
 	}
 };
