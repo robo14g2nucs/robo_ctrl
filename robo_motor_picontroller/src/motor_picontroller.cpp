@@ -22,14 +22,14 @@ private:
 	double du[2]; // delta control signal 'delta_u'
 	double wlr_[2];
 	double pwm_[2];
-	double actual_pwm[2];
+	double prev_pwm[2];
 
 public:
 
 	ros::NodeHandle n_;
 	ros::Subscriber twist_subscriber_;
 	ros::Subscriber encoders_subscriber_;
-	ros::Publisher pwm_publisher_;
+	ros::Publisher pwm_publisher_, ;
 	double twist_[2];
 	double encoder_[5];
 	const double control_frequency; // Control @ 10 Hz
@@ -46,8 +46,8 @@ public:
 		wlr_[1] = 0;
 		pwm_[0] = 0;
 		pwm_[1] = 0;
-		actual_pwm[0] = 65;
-		actual_pwm[1] = 70;
+		prev_pwm[0] = 65;
+		prev_pwm[1] = 70;
 		e_prev[0] = 0;
 		e_prev[1] = 0;
 		n_ = ros::NodeHandle("~");
@@ -83,9 +83,17 @@ public:
 	// Update pwm signals
 	void computePwm ()
 	{
-		std::vector<double> estimated_w_;
-		estimated_w_ = std::vector<double>(2,0);
 
+		//Special case: linear velocity is 0, then stop dead!
+		if (twist_[0] == 0.0 && twist_[1] == 0.0) {
+			prev_pwm[0] = 0.0;
+			pwm_[0] = 0.0;
+			prev_pwm[1] = 0.0;
+			pwm_[1] = 0.0;
+			return;
+		}
+
+		double estimated_w_[2];
 		double delta_encoder[2];
 		delta_encoder[0] = (double) motor_controller::encoder_[3];
 		delta_encoder[1] = (double) motor_controller::encoder_[2];
@@ -111,7 +119,7 @@ public:
 			e_prev[i] = e[i];
 
 			// control signal update
-			pwm_[i] = actual_pwm[i] + du[i];
+			pwm_[i] = prev_pwm[i] + du[i];
 			if (pwm_[i] > 255.0) {
 				pwm_[i] -= du[i];
 			}
@@ -119,7 +127,9 @@ public:
 				pwm_[i] -= du[i];
 			}
 			
-			actual_pwm[i] = pwm_[i];
+			prev_pwm[i] = pwm_[i];
+
+
 		}
 		
 //		std::cerr << "Ti[1] is " << Ti[1] << std::endl;
@@ -142,8 +152,8 @@ public:
 
 		computePwm();
 
-		//std::cerr << "Left PWM: " << pwm_[0] << std::endl;
-		//std::cerr << "Right PWM: " << pwm_[1] << std::endl;
+		std::cerr << "Left PWM: " << pwm_[0] << std::endl;
+		std::cerr << "Right PWM: " << pwm_[1] << std::endl;
 
 		ras_arduino_msgs::PWM msg;
 		msg.PWM1 = (int)pwm_[0];
