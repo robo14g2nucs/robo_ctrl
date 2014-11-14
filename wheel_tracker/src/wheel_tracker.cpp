@@ -10,7 +10,7 @@ private:
 
 	double curAngle;
 	double curX, curY;
-	double delta_encoder1, delta_encoder2;
+	double denc1, denc2;
 	const double DEGTOM; 
 
 public:
@@ -19,7 +19,7 @@ public:
 	ros::Subscriber encoders_subscriber_;
 	ros::Publisher posori_publisher_;
 
-	wheel_tracker_node() : curAngle(0.0), curX(0.0), curY(0.0), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR )
+	wheel_tracker_node() : curAngle(PI+0.2), curX(1.5), curY(0.2), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR )
 	{
 		n_ = ros::NodeHandle("~");
 		encoders_subscriber_ = n_.subscribe("/arduino/encoders", 1, &wheel_tracker_node::update, this);
@@ -31,18 +31,22 @@ public:
 	void update(const ras_arduino_msgs::Encoders::ConstPtr &msg)
 	{
 		//Read the values
-		delta_encoder1 = (double)msg->delta_encoder1;
-		delta_encoder2 = (double)msg->delta_encoder2;
+		denc1 = (double)msg->delta_encoder1;
+		denc2 = (double)msg->delta_encoder2;
 		
 		//Compute new angle and position
-		double ad = (delta_encoder2-delta_encoder1)*DEGTOM/WHEEL_BASE;
-		double ld = (delta_encoder1+delta_encoder2)*DEGTOM/2.0;
-		double r = ld/ad;
-		curX += r*cos(curAngle);
-		curY += r*sin(curAngle);
-		curAngle += ad;
-		curX += r*cos(curAngle);
-		curY += r*sin(curAngle);
+		double ad = (denc1-denc2)*DEGTOM/WHEEL_BASE;
+		double ld = (denc1+denc2)*DEGTOM/2.0;
+		
+		if (ad == 0.0) {
+			curX -= (ld*cos(curAngle));
+			curY -= 2*(ld*sin(curAngle));
+		} else {
+			double r = ld/ad;
+			curX -= (r*(sin(curAngle)-sin(curAngle+ad)));
+			curY -= 2*(r*(cos(curAngle+ad)-cos(curAngle)));
+			curAngle += ad;
+		}
 		
 		//Publish the new orientation and position
 		geometry_msgs::Twist pomsg;

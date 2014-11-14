@@ -54,7 +54,7 @@ public:
 	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_;
 	ros::Publisher twist_publisher_;
 
-	maze_navigator_node() : alpha(0.0175), alpha_align(0.0195), v(0.1), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+	maze_navigator_node() : alpha(0.0175), alpha_align(0.0275), v(0.1), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
 	{
 		hasIR = false;
 		n_ = ros::NodeHandle("~");

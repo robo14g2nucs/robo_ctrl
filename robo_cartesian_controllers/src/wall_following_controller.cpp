@@ -49,7 +49,8 @@ public:
 	// Compute angular velocity
 	void computeAngVel ()
 	{
-		w = alpha * (ir_[0] - ir_[1]);// [m/s]
+	//	w = alpha * (ir_[0] - ir_[1]);// [m/s]
+		w = .009 * (MINDIST-0.5*(ir_[0]+ir_[1]) + 2*(ir_[0]-ir_[1]));
 		// angular_vel = alpha*( distance_sensor1 - distance_sensor2)
 		if (ir_[4]>STOPDIST)
 		{
@@ -63,7 +64,7 @@ public:
 			msg.angular.z = 0;
 			ROS_INFO("front distance 0 [%lf]", ir_[4]);
 		}
-	//	w = alpha * (MINDIST-0.5(ir_[0]+ir_[1]) + 2*(ir[0]-ir[1]));
+
 		ROS_INFO("w: [%lf]", w);
 
 	}
