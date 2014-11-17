@@ -7,54 +7,54 @@
 #include <std_msgs/String.h>
 
 
-#define MINDIST 9	//9 centimeters
-#define STOPDIST 18	//12 centimeters
+//#define MINDIST 9	//9 centimeters
+//#define STOPDIST 18	//12 centimeters
 
-#define IR_SHORT_LIMIT 25
+//#define IR_SHORT_LIMIT 25
 
 
 //Controller modes
-#define STILL 0
-#define LEFT_WALL_FOLLOW 1
-#define RIGHT_WALL_FOLLOW 2
-#define LEFT_ROTATE 3
-#define RIGHT_ROTATE 4
-#define STRAIGHT_FORWARD 5
-#define RIGHT_WALL_ALIGN 6
-#define LEFT_WALL_ALIGN 7
-#define CONFUSED 8
+//#define STILL 0
+//#define LEFT_WALL_FOLLOW 1
+//#define RIGHT_WALL_FOLLOW 2
+//#define LEFT_ROTATE 3
+//#define RIGHT_ROTATE 4
+//#define STRAIGHT_FORWARD 5
+//#define RIGHT_WALL_ALIGN 6
+//#define LEFT_WALL_ALIGN 7
+//#define CONFUSED 8
 
 
-static const char* MODE_NAMES[9] = {"STILL", "LEFT_WALL_FOLLOW", "RIGHT_WALL_FOLLOW",
-"LEFT_ROTATE", "RIGHT_ROTATE", "STRAIGHT_FORWARD", "RIGHT_WALL_ALIGN", "LEFT_WALL_ALIGN", "CONFUSED"};
+//static const char* MODE_NAMES[9] = {"STILL", "LEFT_WALL_FOLLOW", "RIGHT_WALL_FOLLOW",
+//"LEFT_ROTATE", "RIGHT_ROTATE", "STRAIGHT_FORWARD", "RIGHT_WALL_ALIGN", "LEFT_WALL_ALIGN", "CONFUSED"};
 
 
-class maze_navigator_node
+class maze_mapping_node
 {
-private:
+//private:
 
-	int mode;
-	int prevmode; // Rohit: to know the previous mode
-	double alpha; // P gain {left, right}	//DON'T CHANGE THIS DURING RUNTIME
-	double alpha_align;
-	double angle;	//IMU angle
-	double v; // linear velocity constant
-	double w; // angular_vel
-	double refAngle;
-	double delta_enc[2];
+//	int mode;
+//	int prevmode; // Rohit: to know the previous mode
+//	double alpha; // P gain {left, right}	//DON'T CHANGE THIS DURING RUNTIME
+//	double alpha_align;
+//	double angle;	//IMU angle
+//	double v; // linear velocity constant
+//	double w; // angular_vel
+//	double refAngle;
+//	double delta_enc[2];
 
 
-	geometry_msgs::Twist out_twist;
+	std_msgs::Float64 left_wall;
 	ir_reader::distance_readings in_ir;
-	std_msgs::String out_mode;
+	std_msgs::String in_mode;
 
 public:
 
-	bool hasIR;
+//	bool hasIR;
 
 	ros::NodeHandle n_;
-	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_;
-	ros::Publisher twist_publisher_, mode_publisher_;
+	ros::Subscriber ir_reader_subscriber_, navigator_mode_subscriber_;
+	ros::Publisher left_wall_publisher_, right_wall_publisher_, front_wall_publisher_;
 
 	maze_navigator_node() : alpha(0.0175), alpha_align(0.0195), v(0.1), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
 	{
