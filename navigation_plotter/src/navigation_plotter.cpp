@@ -1,11 +1,15 @@
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
+#include <ir_reader/distance_readings.h>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <robo_globals.h>
 #include <cmath>
 #include <cstdio>
+#include <geometry_msgs/Point.h>
+#include <sstream>   // std::cout
+#include <string>     // std::string, std::to_string
 
 
 class navigation_plotter_node
@@ -15,17 +19,65 @@ private:
 	
 	geometry_msgs::Twist posori_msg;
 	visualization_msgs::Marker marker_msg;
-	bool shallPlotIR;
+	geometry_msgs::Point in_rightpoint;
+	geometry_msgs::Point in_leftpoint;
+	int count;
+
+	void visualizepoint(double x, double y) {
+		std::string Result;          // string which will contain the result
+		std::ostringstream convert;   // stream used for the conversion
+		convert << count;      // insert the textual representation of 'Number' in the characters in the stream
+
+		visualization_msgs::Marker points;
+		Result=convert.str();
+		points.ns = Result.c_str();
+		points.header.frame_id = "/map";
+    points.header.stamp =  ros::Time::now();
+//	points.ns = Result;
+    points.action = visualization_msgs::Marker::ADD;
+    points.pose.orientation.w = 1.0;
+    points.id = 0;
+    points.type = visualization_msgs::Marker::POINTS;
+    // POINTS markers use x and y scale for width/height respectively
+    points.scale.x = 0.02;
+    points.scale.y = 0.02;
+    // Points are green
+    points.color.b = 1.0f;
+    points.color.a = 1.0;
+    geometry_msgs::Point p;
+    p.x = x;
+    p.y = y;
+    p.z = 0;
+		points.points.push_back(p);
+		marker_publisher_.publish(points);
+		count++;
+		
+	}
 
 	
 public:
 	ros::Time last_time, current_time;
 	ros::NodeHandle n_;
-	ros::Subscriber posori_subscriber_;
-	ros::Publisher odometry_publisher_, marker_publisher_;
+	ros::Subscriber posori_subscriber_, ir_subscriber_, leftpoint_subscriber_, rightpoint_subscriber_;
+	ros::Publisher odometry_publisher_, marker_publisher_, ir_marker_publisher_;
 	tf::TransformBroadcaster odom_broadcaster;
+	bool shallPlotIR;
 	
-	navigation_plotter_node() : plotIR(false)
+	void leftpointCallback(const geometry_msgs::Point::ConstPtr &msg)
+	{
+//		in_leftpoint = msg;
+		ROS_INFO("am in leftpoint plotter");
+		visualizepoint(msg->x, msg->y);
+	}
+	
+	void rightpointCallback(const geometry_msgs::Point::ConstPtr &msg)
+	{
+//		in_rightpoint = msg;
+		ROS_INFO("am in rightpoint plotter");
+		visualizepoint(msg->x, msg->y);
+	}
+	
+	navigation_plotter_node() : shallPlotIR(false)
 	{
 		n_ = ros::NodeHandle("~");
 		posori_subscriber_ = n_.subscribe("/posori/Twist", 1, &navigation_plotter_node::plotOdom, this);
@@ -33,18 +85,12 @@ public:
 		odometry_publisher_ = n_.advertise<nav_msgs::Odometry>("/odom", 50); //TODO
 		marker_publisher_ = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
 		ir_marker_publisher_ = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
+		leftpoint_subscriber_ = n_.subscribe("/mapping/leftpoint", 1, &navigation_plotter_node::leftpointCallback, this);
+		rightpoint_subscriber_ = n_.subscribe("/mapping/rightpoint", 1, &navigation_plotter_node::rightpointCallback, this);
 	}
 	
 	~navigation_plotter_node() {}
-	
-	bool toggleIR() {
-		plotIR = !plotIR;
-		return plotIR;
-	}
-	
-	void plotIR {
-		
-	}
+
 	
 	void construct_maze() {
 	
@@ -79,7 +125,11 @@ public:
 		
 		lines.lifetime = ros::Duration();
 		
-		marker_publisher_.publish(lines);
+		//marker_publisher_.publish(lines);
+	}
+	
+	void plotIR(const ir_reader::distance_readings::ConstPtr &msg) {
+		
 	}
 	
 	void plotOdom(const geometry_msgs::Twist::ConstPtr &msg)
@@ -134,6 +184,9 @@ public:
 		last_time = current_time;
 	}
 
+
+
+
 };
 
 
@@ -150,8 +203,13 @@ int main(int argc, char **argv)
 	while(npn.n_.ok())
 	{
 		ros::spinOnce();
-		npn.construct_maze();
+		//npn.construct_maze();
 		loop_rate.sleep();
+		
+	
+
+
+		
 	}
 	return 0;
 }

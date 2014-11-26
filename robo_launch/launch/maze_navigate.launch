@@ -5,6 +5,9 @@
 
   <!-- execute maze_navigator -->
   <node pkg="robo_cartesian_controllers" type="maze_navigator" name="maze_navigator_node" output="screen"/>
+  
+   <!-- execute maze_mapping -->
+  <node pkg="robo_cartesian_controllers" type="maze_mapping" name="maze_mapping" output="screen"/>
 
   <!-- execute PI controller -->
   <node pkg="robo_motor_picontroller" type="robo_motor_picontroller_node" name="robo_motor_picontroller_node" output="screen" />

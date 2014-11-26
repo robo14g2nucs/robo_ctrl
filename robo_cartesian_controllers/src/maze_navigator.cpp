@@ -4,6 +4,7 @@
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float64.h>
 #include <robo_globals.h>
+#include <std_msgs/Int16.h>
 #include <std_msgs/String.h>
 
 
@@ -46,7 +47,9 @@ private:
 
 	geometry_msgs::Twist out_twist;
 	ir_reader::distance_readings in_ir;
-	std_msgs::String out_mode;
+	//std_msgs::String out_mode;
+		std_msgs::Int16 out_mode;
+		std_msgs::Int16 out_previous_mode;
 
 public:
 
@@ -54,7 +57,7 @@ public:
 
 	ros::NodeHandle n_;
 	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_;
-	ros::Publisher twist_publisher_, mode_publisher_;
+	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_;
 
 	maze_navigator_node() : alpha(0.0175), alpha_align(0.0195), v(0.1), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
 	{
@@ -65,8 +68,9 @@ public:
 		imu_subscriber_ = n_.subscribe("/imu_angle", 1, &maze_navigator_node::imuAngleCallback, this);
 		twist_publisher_ = n_.advertise<geometry_msgs::Twist>("/motor_controller/twist", 1000);
 	//Rohit: publish mode
-		mode_publisher_ = n_.advertise<std_msgs::String>("/maze_navigator/mode", 1000);
-		
+	//	mode_publisher_ = n_.advertise<std_msgs::String>("/maze_navigator/mode", 1000);
+			mode_publisher_ = n_.advertise<std_msgs::Int16>("/maze_navigator/mode", 1000);
+			prev_mode_publisher_ = n_.advertise<std_msgs::Int16>("/maze_navigator/prevmode", 1000);
 	}
 
 	void encodersCallback(const ras_arduino_msgs::Encoders::ConstPtr &msg)
@@ -96,13 +100,11 @@ public:
 		ROS_INFO("IR back_right: [%lf]", in_ir.back_right);
 		ROS_INFO("IR front_center: [%lf]", in_ir.front_center);
 		switch (mode) {
-
+					
 			case STILL:
 //Rohit: When in still, decide upon the next mode based on the previous mode
 				out_twist.linear.x = 0.0;
-				out_twist.angular.z = 0.0;
-				out_mode.data=MODE_NAMES[mode];			
-				
+				out_twist.angular.z = 0.0;			
 				if (delta_enc[0] != 0 || delta_enc[1] != 0) {
 					//Keep still
 				}
@@ -112,6 +114,7 @@ public:
 		//			if (fabs(in_ir.front_right - in_ir.back_right) < 2){			
 						prevmode=mode;
 						mode = RIGHT_WALL_FOLLOW;	
+						
 			//		}
 			//	else{
 			//			prevmode=mode;
@@ -283,9 +286,11 @@ public:
 					}	
 					break;
 		}
-
+		out_mode.data=mode;
+		out_previous_mode.data=prevmode;
 		twist_publisher_.publish(out_twist);
 		mode_publisher_.publish(out_mode);
+		prev_mode_publisher_.publish(out_previous_mode);
 		ROS_INFO("The current mode is %s", MODE_NAMES[mode]);
 		ROS_INFO("The previous mode is %s", MODE_NAMES[prevmode]);
 	}

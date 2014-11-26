@@ -13,7 +13,13 @@
   <node pkg="imu_reader" type="imu_reader_node" name="imu_reader_node" output="screen"/>
   
   <!-- execute Wheel tracker -->
-  <node pkg="wheel_tracker" type="wheel_tracker_node" name="wheel_tracker_node" output="screen"/>
+  <  node pkg="wheel_tracker" type="wheel_tracker_node" name="wheel_tracker_node" output="screen"/>
+
+<!-- execute navigation plotter -->
+  <!-- node pkg="navigation_plotter" type="navigation_plotter_node" name="navigation_plotter_node" output="screen"/-->
+  
+  <!-- execute maze_mapping -->
+  <!-- node pkg="robo_cartesian_controllers" type="maze_mapping" name="maze_mapping" output="screen"/-->
 
 </launch>
 

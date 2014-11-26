@@ -19,7 +19,7 @@ public:
 	ros::Subscriber encoders_subscriber_;
 	ros::Publisher posori_publisher_;
 
-	wheel_tracker_node() : curAngle(PI+0.2), curX(1.5), curY(0.2), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR )
+	wheel_tracker_node() : curAngle(0.0), curX(1.4), curY(2.25), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR )
 	{
 		n_ = ros::NodeHandle("~");
 		encoders_subscriber_ = n_.subscribe("/arduino/encoders", 1, &wheel_tracker_node::update, this);
@@ -38,15 +38,16 @@ public:
 		double ad = (denc1-denc2)*DEGTOM/WHEEL_BASE;
 		double ld = (denc1+denc2)*DEGTOM/2.0;
 		
-		if (ad == 0.0) {
+		if (fabs(ad) < 0.15) {
+			curAngle += ad;
 			curX -= (ld*cos(curAngle));
-			curY -= 2*(ld*sin(curAngle));
+			curY -= (ld*sin(curAngle));
 		} else {
 			double r = ld/ad;
 			curX -= (r*(sin(curAngle)-sin(curAngle+ad)));
-			curY -= 2*(r*(cos(curAngle+ad)-cos(curAngle)));
+			curY -= (r*(cos(curAngle+ad)-cos(curAngle)));
 			curAngle += ad;
-		}
+		}	
 		
 		//Publish the new orientation and position
 		geometry_msgs::Twist pomsg;
