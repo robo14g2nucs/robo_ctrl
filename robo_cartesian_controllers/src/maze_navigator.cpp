@@ -56,7 +56,7 @@ public:
 	bool hasIR;
 
 	ros::NodeHandle n_;
-	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_;
+    ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
 	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_;
 
 	maze_navigator_node() : alpha(0.0175), alpha_align(0.0195), v(0.1), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
@@ -66,6 +66,7 @@ public:
 		ir_reader_subscriber_ = n_.subscribe("/ir_reader_node/cdistance", 1, &maze_navigator_node::irCallback, this);
 		encoders_subscriber_ = n_.subscribe("/arduino/encoders", 1, &maze_navigator_node::encodersCallback, this);
 		imu_subscriber_ = n_.subscribe("/imu_angle", 1, &maze_navigator_node::imuAngleCallback, this);
+        odometry_subscriber_ = n_.subscribe("/posori/Twist", 1, &maze_navigator_node::odometryCallback, this);
 		twist_publisher_ = n_.advertise<geometry_msgs::Twist>("/motor_controller/twist", 1000);
 	//Rohit: publish mode
 	//	mode_publisher_ = n_.advertise<std_msgs::String>("/maze_navigator/mode", 1000);
@@ -86,9 +87,13 @@ public:
 	}
 
 	void imuAngleCallback(const std_msgs::Float64::ConstPtr &msg) {
-		angle = msg->data;
+//		angle = msg->data;
 		
 	}
+
+    void odometryCallback(const geometry_msgs::Twist &msg) {
+        angle = msg->angular.z;
+    }
 
 	void publish()
 	{
@@ -207,7 +212,7 @@ public:
 			case LEFT_ROTATE:
 				//TODO
 			//Rohit: kept angle smaller since it takes a while to judge whether it has turned 
-				if (fabs(angle-refAngle) >= 70.0) {	
+            if (fabs(angle-refAngle) >= M_PI_2) {
 					//Align to the right wall
 					prevmode = mode;
 					mode = RIGHT_WALL_ALIGN;
@@ -231,7 +236,7 @@ public:
 				//TODO
 //				if (in_ir.front_left < IR_SHORT_LIMIT && in_ir.back_left <
 	//			IR_SHORT_LIMIT && fabs(in_ir.front_left - in_ir.back_left) < 2)
-				if (fabs(angle-refAngle) >= 70.0){
+                if (fabs(angle-refAngle) >= M_PI_2){
 					//Align to the left wall
 					prevmode = mode;
 					mode = LEFT_WALL_ALIGN;				
