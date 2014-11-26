@@ -2,6 +2,8 @@
 #include <ras_arduino_msgs/Encoders.h>
 #include <geometry_msgs/Twist.h>
 #include <robo_globals.h>
+#include <ir_reader/distance_readings.h>
+#include <cmath>
 
 class wheel_tracker_node
 {
@@ -12,17 +14,21 @@ private:
 	double curX, curY;
 	double denc1, denc2;
 	const double DEGTOM; 
+    double leftIrRelAngle;
+    double rightIrRelAngle;
 
 public:
 
 	ros::NodeHandle n_;
 	ros::Subscriber encoders_subscriber_;
+    ros::Subscriber irSub;
 	ros::Publisher posori_publisher_;
 
 	wheel_tracker_node() : curAngle(0.0), curX(1.4), curY(2.25), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR )
 	{
 		n_ = ros::NodeHandle("~");
 		encoders_subscriber_ = n_.subscribe("/arduino/encoders", 1, &wheel_tracker_node::update, this);
+        irSub = n_.subscribe("/ir_reader_node/cdistance", 1, &wheel_tracker_node::irCallback, this);
 		posori_publisher_ = n_.advertise<geometry_msgs::Twist>("/posori/Twist", 1);
 	}
 
@@ -59,6 +65,21 @@ public:
 		pomsg.angular.z = curAngle;
 		posori_publisher_.publish(pomsg);
 	}
+
+    void irCallback(const ir_reader::distance_readings::ConstPtr &msg){
+
+        if(msg->front_left < 25 && msg->back_left < 25){
+            //compute angle to left wall
+            double diff = msg->front_left - msg->back_left;
+            leftIrRelAngle = std::atan2(diff, IR_SIDE_SENSOR_DISTANCE*100);
+        }
+        if(msg->front_right < 25 && msg->back_right < 25){
+            double diff = msg->front_right - msg->back_right;
+            rightIrRelAngle = std::atan2(diff, IR_SIDE_SENSOR_DISTANCE*100);
+        }
+
+        ROS_ERROR("angle from IR: left: %f, right: %f", leftIrRelAngle, rightIrRelAngle);
+    }
 
 };
 

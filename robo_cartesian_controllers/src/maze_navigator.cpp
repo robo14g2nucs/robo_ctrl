@@ -91,7 +91,7 @@ public:
 		
 	}
 
-    void odometryCallback(const geometry_msgs::Twist &msg) {
+    void odometryCallback(const geometry_msgs::Twist::ConstPtr &msg) {
         angle = msg->angular.z;
     }
 
