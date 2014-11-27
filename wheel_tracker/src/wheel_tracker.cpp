@@ -51,7 +51,7 @@ public:
 		double ad = (denc1-denc2)*DEGTOM/WHEEL_BASE;
 		double ld = (denc1+denc2)*DEGTOM/2.0;
 		
-		if (fabs(ad) < 0.15) {
+        if (fabs(ad) < 0.05) {
 			curAngle += ad;
 			curX -= (ld*cos(curAngle));
 			curY -= (ld*sin(curAngle));
@@ -94,7 +94,7 @@ public:
         if(msg->front_left < 25 && msg->back_left < 25){
             //compute angle to left wall
             double diff = msg->front_left - msg->back_left;
-            leftIrRelAngle = M_PI_2 - std::atan2(diff, IR_SIDE_SENSOR_DISTANCE*100);
+            leftIrRelAngle = - std::atan2(diff, IR_SIDE_SENSOR_DISTANCE*100);
         }
         if(msg->front_right < 25 && msg->back_right < 25){
             double diff = msg->front_right - msg->back_right;
@@ -102,14 +102,31 @@ public:
         }
 
         ROS_ERROR("old odomtry angle: %f", curAngle);
-        double odomRelAngle = fmod(curAngle, M_PI_2);
+        double odomRelAngle = fmod(curAngle, M_PI_4);
         double offset = curAngle - odomRelAngle;
         ROS_ERROR("relative odometry: %f", odomRelAngle);
+
+        if(odomRelAngle < 0){
+            if(leftIrRelAngle > 0){
+                leftIrRelAngle -= M_PI_4;
+            }
+            if(rightIrRelAngle > 0){
+                rightIrRelAngle -= M_PI_4;
+            }
+        }
+        else if(odomRelAngle > 0){
+            if(leftIrRelAngle < 0){
+                leftIrRelAngle += M_PI_4;
+            }
+            if(rightIrRelAngle < 0){
+                rightIrRelAngle += M_PI_4;
+            }
+        }
         if(fabs(odomRelAngle - leftIrRelAngle) < 0.2 && fabs(odomRelAngle - leftIrRelAngle) < fabs(odomRelAngle - rightIrRelAngle)){
-            curAngle = offset + (9*odomRelAngle + leftIrRelAngle) / 10.0d;
+            curAngle = offset + (19*odomRelAngle + leftIrRelAngle) / 20.0d;
         }
         else if(fabs(odomRelAngle - rightIrRelAngle) < 0.2 && fabs(odomRelAngle - rightIrRelAngle) < fabs(odomRelAngle - leftIrRelAngle)){
-            curAngle = offset + (9*odomRelAngle + rightIrRelAngle) / 10.0d;
+            curAngle = offset + (19*odomRelAngle + rightIrRelAngle) / 20.0d;
         }
 
         ROS_ERROR("angle from IR: left: %f, right: %f", leftIrRelAngle, rightIrRelAngle);
