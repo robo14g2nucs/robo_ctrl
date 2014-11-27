@@ -86,11 +86,33 @@ public:
 
 		//Special case: linear velocity is 0, then stop dead!
 		if (twist_[0] == 0.0 && twist_[1] == 0.0) {
-			prev_pwm[0] = 0.0;
-			pwm_[0] = 0.0;
-			prev_pwm[1] = 0.0;
-			pwm_[1] = 0.0;
-			return;
+		//	prev_pwm[0] = 0.0;
+		//	pwm_[0] = 0.0;
+		//	prev_pwm[1] = 0.0;
+		//	pwm_[1] = 0.0;
+		//	return;
+		//Left wheel
+			if (encoder_[2]>0)
+			{
+		   	pwm_[0] = -40;
+		   	prev_pwm[0] = -40;
+			}
+			if (encoder_[2]<0)
+			{
+		   	pwm_[0] = 40;
+		   	prev_pwm[0] = 40;
+			}
+			if (encoder_[3]>0)
+			{
+		   	pwm_[1] = -40;
+		   	prev_pwm[1] = -40;
+			}
+			if (encoder_[3]<0)
+			{
+		   	pwm_[0] = -40;
+		   	prev_pwm[0] = -40;
+			}
+		return;
 		}
 
 		double estimated_w_[2];

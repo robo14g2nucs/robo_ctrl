@@ -23,15 +23,8 @@ public:
 	ros::Subscriber encoders_subscriber_;
     ros::Subscriber irSub;
 	ros::Publisher posori_publisher_;
-    double alphama; // weight for exponential weighted moving average filter
-    double Ffront_left;
-    double Ffront_right;
-    double Fback_left;
-    double Fback_right;
-    bool Fboolean;
-
-
-    wheel_tracker_node() : curAngle(0.0), curX(1.4), curY(2.25), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR ), alphama(0.3), Fboolean(0)
+ 
+    wheel_tracker_node() : curAngle(0.0), curX(1.4), curY(2.25), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR )
 	{
 		n_ = ros::NodeHandle("~");
 		encoders_subscriber_ = n_.subscribe("/arduino/encoders", 1, &wheel_tracker_node::update, this);
@@ -77,19 +70,6 @@ public:
 
         double leftIrRelAngle = 100;
         double rightIrRelAngle = 100;
-
-        if (!Fboolean){
-            Ffront_left = msg->front_left;
-            Ffront_right = msg->front_right;
-            Fback_left = msg->back_left;
-            Fback_right = msg->back_right;
-            Fboolean = 1;
-        }
-
-        Ffront_left = Ffront_left * (1-alphama) + msg->front_left * (alphama);
-        Ffront_right = Ffront_right * (1-alphama) + msg->front_right * (alphama);
-        Fback_left = Fback_left * (1-alphama) + msg->back_left * (alphama);
-        Fback_right = Fback_right * (1-alphama) + msg->back_right * (alphama);
 
         if(msg->front_left < 25 && msg->back_left < 25){
             //compute angle to left wall
