@@ -6,7 +6,7 @@
 #include <robo_globals.h>
 #include <std_msgs/Int16.h>
 #include <std_msgs/String.h>
-
+#include <cmath>
 
 #define MINDIST 9	//9 centimeters
 #define STOPDIST 18	//12 centimeters
@@ -108,11 +108,13 @@ public:
 					
 			case STILL:
 //Rohit: When in still, decide upon the next mode based on the previous mode
+				
+								
 				out_twist.linear.x = 0.0;
 				out_twist.angular.z = 0.0;			
 				if (delta_enc[0] != 0 || delta_enc[1] != 0) {
-					//Keep still
 				}
+
 				//Rohit: check the previous mode and accordingly decide the next mode   
 				else if (prevmode==RIGHT_WALL_ALIGN){ 
 					
@@ -138,6 +140,14 @@ public:
 			//			mode = LEFT_WALL_ALIGN;
 			//		}								
 					break;
+				}
+
+				else if(prevmode==LEFT_ROTATE){
+					mode = RIGHT_WALL_ALIGN;
+				}
+
+				else if(prevmode==RIGHT_ROTATE){
+					mode = LEFT_WALL_ALIGN;
 				}
 				
 				else if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
@@ -212,10 +222,11 @@ public:
 			case LEFT_ROTATE:
 				//TODO
 			//Rohit: kept angle smaller since it takes a while to judge whether it has turned 
-            if (fabs(angle-refAngle) >= M_PI_2) {
+            if (fabs(angle-refAngle) >= 1.1){ 
+
 					//Align to the right wall
 					prevmode = mode;
-					mode = RIGHT_WALL_ALIGN;
+					mode = STILL;
 					}				
 				
 
@@ -227,7 +238,7 @@ public:
 //			}
 
 //			out_twist.angular.z = 1.3;
-				out_twist.angular.z = (90-fabs(angle-refAngle))/100.0;
+				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*0.7;
 				out_twist.linear.x = 0.0;
 
 				break;
@@ -236,10 +247,10 @@ public:
 				//TODO
 //				if (in_ir.front_left < IR_SHORT_LIMIT && in_ir.back_left <
 	//			IR_SHORT_LIMIT && fabs(in_ir.front_left - in_ir.back_left) < 2)
-                if (fabs(angle-refAngle) >= M_PI_2){
+                if (fabs(angle-refAngle) >= 1.1){
 					//Align to the left wall
 					prevmode = mode;
-					mode = LEFT_WALL_ALIGN;				
+					mode = STILL;				
 				}
 
 				//Only for stationary demo
@@ -250,7 +261,7 @@ public:
 //			}
 				//out_twist.angular.z = -1.3;
 				//out_twist.angular.z = -0.7;
-				out_twist.angular.z = -(90-fabs(angle-refAngle))/100.0;
+				out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*0.7;
 				out_twist.linear.x = 0.0;
 				break;
 
@@ -275,7 +286,7 @@ public:
 				case RIGHT_WALL_ALIGN:
 				
 					if (fabs(in_ir.front_right - in_ir.back_right) > 2) {
-						out_twist.angular.z = -alpha_align* (in_ir.front_right - in_ir.back_right);
+						out_twist.angular.z = -alpha_align*2.5* (in_ir.front_right - in_ir.back_right);
 					} else {
 							prevmode = mode;
 							mode = STILL;
@@ -284,7 +295,7 @@ public:
 				case LEFT_WALL_ALIGN:
 				
 					if (fabs(in_ir.front_left - in_ir.back_left) > 2) {
-						out_twist.angular.z = alpha_align* (in_ir.front_left - in_ir.back_left);
+						out_twist.angular.z = alpha_align*2.5* (in_ir.front_left - in_ir.back_left);
 					} else {
 							prevmode = mode;
 							mode = STILL;
