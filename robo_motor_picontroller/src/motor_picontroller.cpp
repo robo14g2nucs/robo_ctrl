@@ -92,22 +92,22 @@ public:
 		//	pwm_[1] = 0.0;
 		//	return;
 		//Left wheel
-			if (encoder_[2]>0)
+			if (encoder_[3]>0)
 			{
 		   	pwm_[0] = -40;
 		   	prev_pwm[0] = -40;
 			}
-			if (encoder_[2]<0)
+			if (encoder_[3]<0)
 			{
 		   	pwm_[0] = 40;
 		   	prev_pwm[0] = 40;
 			}
-			if (encoder_[3]>0)
+			if (encoder_[2]>0)
 			{
 		   	pwm_[1] = -40;
 		   	prev_pwm[1] = -40;
 			}
-			if (encoder_[3]<0)
+			if (encoder_[2]<0)
 			{
 		   	pwm_[0] = -40;
 		   	prev_pwm[0] = -40;

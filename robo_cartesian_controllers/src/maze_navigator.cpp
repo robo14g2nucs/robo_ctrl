@@ -222,7 +222,7 @@ public:
 			case LEFT_ROTATE:
 				//TODO
 			//Rohit: kept angle smaller since it takes a while to judge whether it has turned 
-            if (fabs(angle-refAngle) >= 1.1){ 
+            if (fabs(angle-refAngle) >= 1.3){ 
 
 					//Align to the right wall
 					prevmode = mode;
@@ -247,7 +247,7 @@ public:
 				//TODO
 //				if (in_ir.front_left < IR_SHORT_LIMIT && in_ir.back_left <
 	//			IR_SHORT_LIMIT && fabs(in_ir.front_left - in_ir.back_left) < 2)
-                if (fabs(angle-refAngle) >= 1.1){
+                if (fabs(angle-refAngle) >= 1.3){
 					//Align to the left wall
 					prevmode = mode;
 					mode = STILL;				

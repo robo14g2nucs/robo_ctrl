@@ -140,8 +140,8 @@ public:
         Fback_left = Fback_left * (1-alphama) + res[1] * (alphama);
         Ffront_right = Ffront_right * (1-alphama) + res[2] * (alphama);
         Fback_right = Fback_right * (1-alphama) + res[3] * (alphama);
-        Ffront_center = Ffront_right * (1-alphama) + res[4] * (alphama);
-        Fback_center = Fback_right * (1-alphama) + res[5] * (alphama);
+        Ffront_center = Ffront_center * (1-alphama) + res[4] * (alphama);
+        Fback_center = Fback_center * (1-alphama) + res[5] * (alphama);
 
 		cdmsg.front_left = Ffront_left;
 		cdmsg.back_left= Fback_left;
