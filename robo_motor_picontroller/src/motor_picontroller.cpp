@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cmath>
 #include <robo_globals.h>
+#define STILLCONST 35
 
 
 class motor_controller
@@ -85,34 +86,34 @@ public:
 	{
 
 		//Special case: linear velocity is 0, then stop dead!
-		if (twist_[0] == 0.0 && twist_[1] == 0.0) {
-		//	prev_pwm[0] = 0.0;
-		//	pwm_[0] = 0.0;
-		//	prev_pwm[1] = 0.0;
-		//	pwm_[1] = 0.0;
-		//	return;
+		if ((twist_[0] == 0.0) && (twist_[1] == 0.0)) {
+			prev_pwm[0] = 0.0;
+			pwm_[0] = 0.0;
+			prev_pwm[1] = 0.0;
+			pwm_[1] = 0.0;
+			return;
 		//Left wheel
-			if (encoder_[3]>0)
-			{
-		   	pwm_[0] = -40;
-		   	prev_pwm[0] = -40;
-			}
-			if (encoder_[3]<0)
-			{
-		   	pwm_[0] = 40;
-		   	prev_pwm[0] = 40;
-			}
-			if (encoder_[2]>0)
-			{
-		   	pwm_[1] = -40;
-		   	prev_pwm[1] = -40;
-			}
-			if (encoder_[2]<0)
-			{
-		   	pwm_[0] = -40;
-		   	prev_pwm[0] = -40;
-			}
-		return;
+		//	if (encoder_[3]>0)
+		//	{
+		//  	pwm_[0] = -STILLCONST;
+		   //	prev_pwm[0] = -45;
+		//	}
+		//	if (encoder_[3]<0)
+		//	{
+		//   	pwm_[0] = STILLCONST;
+		   //	prev_pwm[0] = 45;
+		//	}
+		//	if (encoder_[2]>0)
+		//	{
+		//  	pwm_[1] = -STILLCONST;
+		   //	prev_pwm[1] = -45;
+		//	}
+		//	if (encoder_[2]<0)
+		//	{
+		//   	pwm_[0] = STILLCONST;
+		   //	prev_pwm[0] = -45;
+		//	}
+		//return;
 		}
 
 		double estimated_w_[2];
@@ -149,8 +150,11 @@ public:
 				pwm_[i] -= du[i];
 			}
 			
+		//	if (fabs(pwm_[i])!=fabs(STILLCONST))			
+		//	{
 			prev_pwm[i] = pwm_[i];
-
+		//	}
+		//	else
 
 		}
 		

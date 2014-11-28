@@ -53,8 +53,10 @@ public:
 			curX -= (r*(sin(curAngle)-sin(curAngle+ad)));
 			curY -= (r*(cos(curAngle+ad)-cos(curAngle)));
 			curAngle += ad;
-		}	
-		
+		//	if (curAngle<0){
+		//		curAngle=curAngle+TWOPI;
+		//}	
+		}
 		//Publish the new orientation and position
 		geometry_msgs::Twist pomsg;
 		pomsg.linear.x = curX;

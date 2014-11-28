@@ -9,7 +9,7 @@
 #include <cmath>
 
 #define MINDIST 9	//9 centimeters
-#define STOPDIST 18	//12 centimeters
+#define STOPDIST 22	//12 centimeters
 
 #define IR_SHORT_LIMIT 25
 
@@ -43,6 +43,7 @@ private:
 	double w; // angular_vel
 	double refAngle;
 	double delta_enc[2];
+	double angcomp;
 
 
 	geometry_msgs::Twist out_twist;
@@ -53,13 +54,13 @@ private:
 
 public:
 
-	bool hasIR;
+	bool hasIR, rotaBool;
 
 	ros::NodeHandle n_;
     ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
 	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_;
 
-	maze_navigator_node() : alpha(0.0175), alpha_align(0.0195), v(0.1), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+	maze_navigator_node() : alpha(0.0175), alpha_align(0.0195), v(.15), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
 	{
 		hasIR = false;
 		n_ = ros::NodeHandle("~");
@@ -97,7 +98,7 @@ public:
 
 	void publish()
 	{
-		ROS_INFO("The current angle is %lf", angle);
+		ROS_INFO("The current angle is %lf", (angle*180)/M_PI);
 		ROS_INFO("The reference angle is %lf", refAngle);
 		ROS_INFO("IR front_left: [%lf]", in_ir.front_left);
 		ROS_INFO("IR back_left: [%lf]", in_ir.back_left);
@@ -152,17 +153,20 @@ public:
 				
 				else if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
 					prevmode=mode;
+					rotaBool=true;
 					mode = LEFT_ROTATE;
 					refAngle = angle;
 					ROS_INFO("Left rotate:First if");
 				} else if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
 					prevmode=mode;
+					rotaBool=true;
 					mode = RIGHT_ROTATE;
 					refAngle = angle;
 				} else {
 					//TODO go back
 					prevmode=mode;
 					mode = LEFT_ROTATE;
+					rotaBool=true;
 					refAngle = angle;
 					ROS_INFO("Left rotate:Second if");
 				}
@@ -220,14 +224,37 @@ public:
 				break;
 
 			case LEFT_ROTATE:
-				//TODO
-			//Rohit: kept angle smaller since it takes a while to judge whether it has turned 
-            if (fabs(angle-refAngle) >= 1.3){ 
-
+		
+	//	for (int i=-4; i<5; i++)
+		for (int i=0; i<5; i++)
+		{
+//		ROS_INFO("rotaBool1=%d", rotaBool);
+//		ROS_INFO("Comp = %lf",fabs(fabs(angle)-fabs(i*M_PI/2)));
+		if(rotaBool==true)
+		{
+		if (fabs(angle-(i*M_PI/2)) <(TWOPI/8)){
+			angcomp=i*M_PI/2;
+//			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
+			rotaBool=false;
+					}
+	  }
+	  }	
+		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+//	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
+					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the right wall
 					prevmode = mode;
 					mode = STILL;
-					}				
+					}	
+		//TODO
+			//Rohit: kept angle smaller since it takes a while to judge whether it has turned 
+		// if (fabs(angle-refAngle) >= angcomp){ 
+		//	if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
+		//			ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
+					//Align to the right wall
+		//			prevmode = mode;
+		//			mode = STILL;
+		//			}				
 				
 
 				//Only for stationary demo
@@ -236,22 +263,44 @@ public:
 //				mode = RIGHT_WALL_FOLLOW;
 //				break;
 //			}
-
+			break;
 //			out_twist.angular.z = 1.3;
-				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*0.7;
+				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*.8;
 				out_twist.linear.x = 0.0;
-
-				break;
+			
+				
 
 			case RIGHT_ROTATE:
+		for (int i=0; i<5; i++)
+		{
+//		ROS_INFO("rotaBool1=%d", rotaBool);
+//		ROS_INFO("Comp = %lf",fabs(fabs(angle)-fabs(i*M_PI/2)));
+		if(rotaBool==true)
+		{
+		if (fabs(angle-(i*M_PI/2)) <(TWOPI/8)){
+			angcomp=i*M_PI/2;
+//			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
+			rotaBool=false;
+					}
+	  }
+	  }	
+		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+//	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
+					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
+					//Align to the right wall
+					prevmode = mode;
+					mode = STILL;
+					}
+			
+			
 				//TODO
 //				if (in_ir.front_left < IR_SHORT_LIMIT && in_ir.back_left <
 	//			IR_SHORT_LIMIT && fabs(in_ir.front_left - in_ir.back_left) < 2)
-                if (fabs(angle-refAngle) >= 1.3){
+          //      if (fabs(angle-refAngle) >= 1.2){
 					//Align to the left wall
-					prevmode = mode;
-					mode = STILL;				
-				}
+					//prevmode = mode;
+					//mode = STILL;				
+				//}
 
 				//Only for stationary demo
 //			if (in_ir.front_left < IR_SHORT_LIMIT && in_ir.back_left <
@@ -261,9 +310,11 @@ public:
 //			}
 				//out_twist.angular.z = -1.3;
 				//out_twist.angular.z = -0.7;
-				out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*0.7;
-				out_twist.linear.x = 0.0;
+				
 				break;
+				out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*.8;
+				out_twist.linear.x = 0.0;
+				
 
 			case STRAIGHT_FORWARD:
 				//TODO
@@ -278,23 +329,32 @@ public:
 					mode = RIGHT_WALL_FOLLOW;
 				} else {
 					//Keep Straight
-					out_twist.linear.x = .08;
+					out_twist.linear.x = .1;
 					out_twist.angular.z = 0.0;
 				}
 				break;
 				
 				case RIGHT_WALL_ALIGN:
-				
-					if (fabs(in_ir.front_right - in_ir.back_right) > 2) {
+					if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
+					prevmode=mode;
+					mode = STRAIGHT_FORWARD;
+					break;
+				}	
+					if (fabs(in_ir.front_right - in_ir.back_right) > 3.5) {
 						out_twist.angular.z = -alpha_align*2.5* (in_ir.front_right - in_ir.back_right);
 					} else {
 							prevmode = mode;
-							mode = STILL;
+							mode = STILL	;
 					}
 				break;
-				case LEFT_WALL_ALIGN:
 				
-					if (fabs(in_ir.front_left - in_ir.back_left) > 2) {
+				case LEFT_WALL_ALIGN:
+					if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
+					prevmode=mode;
+					mode = STRAIGHT_FORWARD;
+					break;
+				}
+					if (fabs(in_ir.front_left - in_ir.back_left) > 3.5) {
 						out_twist.angular.z = alpha_align*2.5* (in_ir.front_left - in_ir.back_left);
 					} else {
 							prevmode = mode;
@@ -318,11 +378,11 @@ int main(int argc, char **argv)
 
 	ros::init(argc, argv, "maze_navigator");
 	maze_navigator_node mnnode;
-	ros::Rate loop_rate(CTRL_FREQ);
+	ros::Rate loop_rate(30);
 	
-	for (int i = 0; i < 20; ++i) {
-		loop_rate.sleep();
-	}
+	//for (int i = 0; i < 20; ++i) {
+	//	loop_rate.sleep();
+	//}
 
 	while (ros::ok())
 	{
