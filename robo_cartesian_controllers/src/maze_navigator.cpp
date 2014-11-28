@@ -54,13 +54,13 @@ private:
 
 public:
 
-	bool hasIR, rotaBool;
+	bool hasIR;
 
 	ros::NodeHandle n_;
 	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
 	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_;
-
-	maze_navigator_node() : alpha(0.0175), alpha_align(0.0195), v(.15), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+                                // 0.0175
+	maze_navigator_node() : alpha(0.08), alpha_align(0.0195), v(.17), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
 	{
 		hasIR = false;
 		n_ = ros::NodeHandle("~");
@@ -101,7 +101,6 @@ public:
 		out_twist.angular.z = 0.0;			
 		if (delta_enc[0] != 0 || delta_enc[1] != 0) {
 			//Do nothing
-			prevmode = STILL;
 			return STILL;
 		}
 		
@@ -113,27 +112,27 @@ public:
 		
 		else if (prevmode==LEFT_WALL_ALIGN){	
 			prevmode=mode;
-			mode = LEFT_WALL_FOLLOW;							
+			mode = LEFT_WALL_FOLLOW;						
 		}
 
 		else if(prevmode==LEFT_ROTATE){
+			prevmode=mode;
 			mode = RIGHT_WALL_ALIGN;
 		}
 
 		else if(prevmode==RIGHT_ROTATE){
+			prevmode=mode;
 			mode = LEFT_WALL_ALIGN;
 		}
 		
 		else if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
 			prevmode=mode;
-			rotaBool=true;
 			mode = LEFT_ROTATE;
 			refAngle = angle;
 			ROS_INFO("Left rotate:First if");
 			angcomp = (int)((angle/(PI/2.0))+0.5) * PI/2.0;	//Compute the closest angle multiple of PI/2
 		} else if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
 			prevmode=mode;
-			rotaBool=true;
 			mode = RIGHT_ROTATE;
 			refAngle = angle;
 			angcomp = (int)((angle/(PI/2.0))+0.5) * PI/2.0;	//Compute the closest angle multiple of PI/2
@@ -141,13 +140,11 @@ public:
 			//TODO go back
 			prevmode=mode;
 			mode = LEFT_ROTATE;
-			rotaBool=true;
 			refAngle = angle;
 			ROS_INFO("Left rotate:Second if");
 			angcomp = (int)((angle/(PI/2.0))+0.5) * PI/2.0;	//Compute the closest angle multiple of PI/2
 		}
-		
-		prevmode = mode;
+
 		return mode;
 	}
 	
@@ -184,7 +181,8 @@ public:
 				}
 				
 				prevmode == LEFT_WALL_FOLLOW;
-				out_twist.angular.z = alpha * (in_ir.front_left - in_ir.back_left);// [m/s]
+				//out_twist.angular.z = alpha * (in_ir.front_left - in_ir.back_left);// [m/s]
+				out_twist.angular.z = alpha * (12 - (0.5)*(in_ir.front_left + in_ir.back_left));// [m/s]
 				out_twist.linear.x = v;
 				
 				//w = alpha * (MINDIST-0.5(in_ir.front_left+in_ir.back_left) + 2*(ir[0]-ir[1]));
@@ -204,7 +202,8 @@ public:
 					break;
 				}		
 				//Rohit: added the negative sign here
-				out_twist.angular.z = -alpha * (in_ir.front_right - in_ir.back_right);// [m/s]
+				//out_twist.angular.z = -alpha * (in_ir.front_right - in_ir.back_right);// [m/s]
+				out_twist.angular.z = alpha * (12 - (0.5)*(in_ir.front_right + in_ir.back_right));// [m/s]
 				out_twist.linear.x = v;
 				//w = alpha * (MINDIST-0.5(in_ir.front_right+in_ir.back_right) + 2*(ir[2]-ir[3]));
 				break;
@@ -302,7 +301,7 @@ int main(int argc, char **argv)
 
 	ros::init(argc, argv, "maze_navigator");
 	maze_navigator_node mnnode;
-	ros::Rate loop_rate(30);
+	ros::Rate loop_rate(100);
 	
 	//for (int i = 0; i < 20; ++i) {
 	//	loop_rate.sleep();
