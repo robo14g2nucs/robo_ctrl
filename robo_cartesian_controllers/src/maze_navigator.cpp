@@ -226,6 +226,7 @@ public:
 			case LEFT_ROTATE:
 		
 	//	for (int i=-4; i<5; i++)
+/*
 				for (int i=0; i<5; i++)
 				{
 					ROS_INFO("rotaBool1=%d", rotaBool);
@@ -241,11 +242,29 @@ public:
 				}	
 				if (fabs(angle - refAngle) >=fabs(fabs(angcomp)+M_PI_2-fabs(angle))){
 		//	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
+*/
+		for (int i=0; i<5; i++)
+		{
+//		ROS_INFO("rotaBool1=%d", rotaBool);
+//		ROS_INFO("Comp = %lf",fabs(fabs(angle)-fabs(i*M_PI/2)));
+		if(rotaBool==true)
+		{
+		if (fabs(angle-(i*M_PI/2)) <(TWOPI/8)){
+			angcomp=i*M_PI/2;
+//			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
+			rotaBool=false;
+					}
+	  }
+	  }	
+		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+//	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
 					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the right wall
 					prevmode = mode;
 					mode = STILL;
 				}	
+
+
 		//TODO
 			//Rohit: kept angle smaller since it takes a while to judge whether it has turned 
 		// if (fabs(angle-refAngle) >= angcomp){ 
@@ -263,15 +282,16 @@ public:
 //				mode = RIGHT_WALL_FOLLOW;
 //				break;
 //			}
-
+			break;
 //			out_twist.angular.z = 1.3;
 				//out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*.8;
 				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*1.2;
 				out_twist.linear.x = 0.0;
-
-				break;
+			
+				
 
 			case RIGHT_ROTATE:
+/*			
 				for (int i=0; i>-5; i--)
 				{
 					ROS_INFO("rotaBool1=%d", rotaBool);
@@ -287,12 +307,28 @@ public:
 					}
 				}	
 				if (fabs(fabs(angle) - fabs(refAngle)) >=fabs(fabs(angcomp)+M_PI_2-fabs(angle))){
+*/
+		for (int i=0; i<5; i++)
+		{
+//		ROS_INFO("rotaBool1=%d", rotaBool);
+//		ROS_INFO("Comp = %lf",fabs(fabs(angle)-fabs(i*M_PI/2)));
+		if(rotaBool==true)
+		{
+		if (fabs(angle-(i*M_PI/2)) <(TWOPI/8)){
+			angcomp=i*M_PI/2;
+//			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
+			rotaBool=false;
+					}
+	  }
+	  }	
+		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+
 //	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
 					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the right wall
 					prevmode = mode;
 					mode = STILL;
-					}	
+					}
 			
 			
 				//TODO
@@ -314,6 +350,7 @@ public:
 				//out_twist.angular.z = -0.7;
 				
 				break;
+				
 				//out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*.8;
 				out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*1.2;
 				out_twist.linear.x = 0.0;
@@ -347,7 +384,7 @@ public:
 						out_twist.angular.z = -alpha_align*2.5* (in_ir.front_right - in_ir.back_right);
 					} else {
 							prevmode = mode;
-							mode = STILL;
+							mode = STILL	;
 					}
 					break;
 				
@@ -357,6 +394,7 @@ public:
 						mode = STRAIGHT_FORWARD;
 						break;
 					}
+
 					if (fabs(in_ir.front_left - in_ir.back_left) > 3.5) {
 						out_twist.angular.z = alpha_align*2.5* (in_ir.front_left - in_ir.back_left);
 					} else {
