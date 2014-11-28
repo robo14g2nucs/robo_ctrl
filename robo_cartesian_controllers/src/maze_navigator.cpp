@@ -1,4 +1,4 @@
-#include "ros/ros.h"
+	#include "ros/ros.h"
 #include <ras_arduino_msgs/Encoders.h>
 #include <ir_reader/distance_readings.h>
 #include <geometry_msgs/Twist.h>
@@ -369,7 +369,7 @@ public:
 					mode = RIGHT_WALL_FOLLOW;
 				} else {
 					//Keep Straight
-					out_twist.linear.x = .1;
+					out_twist.linear.x = v;
 					out_twist.angular.z = 0.0;
 				}
 				break;

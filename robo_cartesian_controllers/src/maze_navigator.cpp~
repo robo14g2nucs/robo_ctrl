@@ -226,7 +226,7 @@ public:
 			case LEFT_ROTATE:
 		
 	//	for (int i=-4; i<5; i++)
-<<<<<<< HEAD
+/*
 				for (int i=0; i<5; i++)
 				{
 					ROS_INFO("rotaBool1=%d", rotaBool);
@@ -242,7 +242,7 @@ public:
 				}	
 				if (fabs(angle - refAngle) >=fabs(fabs(angcomp)+M_PI_2-fabs(angle))){
 		//	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
-=======
+*/
 		for (int i=0; i<5; i++)
 		{
 //		ROS_INFO("rotaBool1=%d", rotaBool);
@@ -258,16 +258,13 @@ public:
 	  }	
 		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
 //	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
->>>>>>> 15b3395975de99babb1918e06625aa9468693492
 					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the right wall
 					prevmode = mode;
 					mode = STILL;
-<<<<<<< HEAD
 				}	
-=======
-					}	
->>>>>>> 15b3395975de99babb1918e06625aa9468693492
+
+
 		//TODO
 			//Rohit: kept angle smaller since it takes a while to judge whether it has turned 
 		// if (fabs(angle-refAngle) >= angcomp){ 
@@ -287,12 +284,8 @@ public:
 //			}
 			break;
 //			out_twist.angular.z = 1.3;
-<<<<<<< HEAD
 				//out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*.8;
 				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*1.2;
-=======
-				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*.8;
->>>>>>> 15b3395975de99babb1918e06625aa9468693492
 				out_twist.linear.x = 0.0;
 			
 				
@@ -376,7 +369,7 @@ public:
 					mode = RIGHT_WALL_FOLLOW;
 				} else {
 					//Keep Straight
-					out_twist.linear.x = .1;
+					out_twist.linear.x = v;
 					out_twist.angular.z = 0.0;
 				}
 				break;
