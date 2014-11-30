@@ -110,7 +110,7 @@ add_executable(ir_reader_node src/ir_reader.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(ras_lab1_motor_controller_node ras_lab1_motor_controller_generate_messages_cpp)
+add_dependencies(ir_reader_node ir_reader_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(ir_reader_node
