@@ -8,7 +8,7 @@
 #include <std_msgs/String.h>
 #include <cmath>
 
-#define MINDIST 9	//9 centimeters
+#define MINDIST 12	//12 centimeters
 #define STOPDIST 22	//12 centimeters
 
 #define IR_SHORT_LIMIT 25
@@ -59,8 +59,8 @@ public:
 	ros::NodeHandle n_;
     ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
 	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_;
-
-	maze_navigator_node() : alpha(0.0175), alpha_align(0.0195), v(.15), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+                                //0.0175
+	maze_navigator_node() : alpha(0.05), alpha_align(0.0195), v(.18), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
 	{
 		hasIR = false;
 		n_ = ros::NodeHandle("~");
@@ -199,7 +199,8 @@ public:
 //				}
 //				}
 				prevmode == LEFT_WALL_FOLLOW;
-				out_twist.angular.z = alpha * (in_ir.front_left - in_ir.back_left);// [m/s]
+				//out_twist.angular.z = alpha * (in_ir.front_left - in_ir.back_left);// [m/s]
+				out_twist.angular.z = alpha * (MINDIST-0.5*(in_ir.front_left+in_ir.back_left) + 2*(in_ir.front_left - in_ir.back_left));// [m/s]
 				out_twist.linear.x = v;
 				
 				//w = alpha * (MINDIST-0.5(in_ir.front_left+in_ir.back_left) + 2*(ir[0]-ir[1]));
@@ -218,7 +219,8 @@ public:
 					break;
 				}		
 				//Rohit: added the negative sign here
-				out_twist.angular.z = -alpha * (in_ir.front_right - in_ir.back_right);// [m/s]
+				//out_twist.angular.z = -alpha * (in_ir.front_right - in_ir.back_right);// [m/s]
+				out_twist.angular.z = alpha * (MINDIST-0.5*(in_ir.front_right+in_ir.back_right) + 2*(in_ir.front_right - in_ir.back_right));
 				out_twist.linear.x = v;
 				//w = alpha * (MINDIST-0.5(in_ir.front_right+in_ir.back_right) + 2*(ir[2]-ir[3]));
 				break;
@@ -228,18 +230,19 @@ public:
 	//	for (int i=-4; i<5; i++)
 		for (int i=0; i<5; i++)
 		{
-//		ROS_INFO("rotaBool1=%d", rotaBool);
-//		ROS_INFO("Comp = %lf",fabs(fabs(angle)-fabs(i*M_PI/2)));
+		ROS_INFO("rotaBool1=%d", rotaBool);
+		ROS_INFO("Comp = %lf",fabs(angle-i*M_PI/2));
 		if(rotaBool==true)
 		{
-		if (fabs(angle-(i*M_PI/2)) <(TWOPI/8)){
+		if (fabs(angle-(i*M_PI/2)) <(TWOPI/6)){
 			angcomp=i*M_PI/2;
-//			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
+			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
 			rotaBool=false;
 					}
 	  }
 	  }	
-		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+		if (fabs(angle - refAngle) >=1.15){
+	//	if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
 //	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
 					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the right wall
@@ -263,28 +266,29 @@ public:
 //				mode = RIGHT_WALL_FOLLOW;
 //				break;
 //			}
-			break;
-//			out_twist.angular.z = 1.3;
-				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*.8;
-				out_twist.linear.x = 0.0;
 			
+//			out_twist.angular.z = 1.3;
+				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*.68;
+				out_twist.linear.x = 0.0;
+			break;
 				
 
 			case RIGHT_ROTATE:
 		for (int i=0; i<5; i++)
 		{
-//		ROS_INFO("rotaBool1=%d", rotaBool);
-//		ROS_INFO("Comp = %lf",fabs(fabs(angle)-fabs(i*M_PI/2)));
+		ROS_INFO("rotaBool1=%d", rotaBool);
+		ROS_INFO("Comp = %lf",fabs(fabs(angle)-fabs(i*M_PI/2)));
 		if(rotaBool==true)
 		{
-		if (fabs(angle-(i*M_PI/2)) <(TWOPI/8)){
+		if (fabs(angle-(i*M_PI/2)) <(TWOPI/6)){
 			angcomp=i*M_PI/2;
 //			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
 			rotaBool=false;
 					}
 	  }
 	  }	
-		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+		if (fabs(angle - refAngle) >=1.15){
+//		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
 //	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
 					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the right wall
@@ -311,10 +315,10 @@ public:
 				//out_twist.angular.z = -1.3;
 				//out_twist.angular.z = -0.7;
 				
-				break;
-				out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*.8;
-				out_twist.linear.x = 0.0;
 				
+				out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*0.68;
+				out_twist.linear.x = 0.0;
+				break;
 
 			case STRAIGHT_FORWARD:
 				//TODO
@@ -341,7 +345,7 @@ public:
 					break;
 				}	
 					if (fabs(in_ir.front_right - in_ir.back_right) > 3.5) {
-						out_twist.angular.z = -alpha_align*2.5* (in_ir.front_right - in_ir.back_right);
+						out_twist.angular.z = -alpha_align*2* (in_ir.front_right - in_ir.back_right);
 					} else {
 							prevmode = mode;
 							mode = STILL	;
@@ -355,7 +359,7 @@ public:
 					break;
 				}
 					if (fabs(in_ir.front_left - in_ir.back_left) > 3.5) {
-						out_twist.angular.z = alpha_align*2.5* (in_ir.front_left - in_ir.back_left);
+						out_twist.angular.z = alpha_align*2* (in_ir.front_left - in_ir.back_left);
 					} else {
 							prevmode = mode;
 							mode = STILL;
