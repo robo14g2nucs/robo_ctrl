@@ -132,15 +132,15 @@ public:
 		
 	}
 	
-	void plotOdom(const geometry_msgs::Twist::ConstPtr &msg)
+	void plotOdom(const geometry_msgs::TwistStamped::ConstPtr &msg)
 	{
 		current_time = ros::Time::now();
 		
 		//Read the current orientation and position
 		double x, y, angle;
-		x = msg->linear.x;
-		y = msg->linear.y;
-		angle = msg->angular.z;
+		x = msg->twist.linear.x;
+		y = msg->twist.linear.y;
+		angle = msg->twist.angular.z;
 		
 		ROS_INFO("x y and angle are: %lf %lf and %lf*pi", x, y, angle/PI);
 

@@ -11,5 +11,6 @@ static const double CTRL_FREQ = 10.0;
 static const double TICKSPR = 360.0;
 static const double PI = acos(-1.0);
 static const double TWOPI = 2*PI;
+static const double IR_SIDE_SENSOR_DISTANCE = 0.19;
 
 #endif

@@ -1,15 +1,15 @@
 #include "ros/ros.h"
 #include <ras_arduino_msgs/Encoders.h>
 #include <ir_reader/distance_readings.h>
-#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Float64.h>
 #include <robo_globals.h>
 #include <std_msgs/Int16.h>
 #include <std_msgs/String.h>
 #include <cmath>
 
-#define MINDIST 9	//9 centimeters
-#define STOPDIST 22	//12 centimeters
+#define MINDIST 15	//15 centimeters
+#define STOPDIST 17	//17 centimeters
 
 #define IR_SHORT_LIMIT 25
 
@@ -36,7 +36,7 @@ private:
 
 	int mode;
 	int prevmode; // Rohit: to know the previous mode
-	double alpha; // P gain {left, right}	//DON'T CHANGE THIS DURING RUNTIME
+	double alpha, alpha1; // P gain {left, right}	//DON'T CHANGE THIS DURING RUNTIME
 	double alpha_align;
 	double angle;	//IMU angle
 	double v; // linear velocity constant
@@ -44,6 +44,7 @@ private:
 	double refAngle;
 	double delta_enc[2];
 	double angcomp;
+	double targetAngle;
 
 
 	geometry_msgs::Twist out_twist;
@@ -59,8 +60,14 @@ public:
 	ros::NodeHandle n_;
 	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
 	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_;
+<<<<<<< HEAD
                                 // 0.0175
-	maze_navigator_node() : alpha(0.08), alpha_align(0.0195), v(.18), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+	maze_navigator_node() : alpha(0.08), alpha_align(0.0195), v(.17), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+=======
+                                
+                                //alpha(0.0255), alpha1(2.53586),
+	maze_navigator_node() : alpha(0.0245), alpha1(2.32586), alpha_align(0.0195), v(.17), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+>>>>>>> temp
 	{
 		hasIR = false;
 		n_ = ros::NodeHandle("~");
@@ -91,8 +98,13 @@ public:
 		//angle = msg->data;
 	}
 
+<<<<<<< HEAD
 	void odometryCallback(const geometry_msgs::Twist::ConstPtr &msg) {
 		angle = msg->angular.z;
+=======
+	void odometryCallback(const geometry_msgs::TwistStamped::ConstPtr &msg) {
+		angle = msg->twist.angular.z;
+>>>>>>> temp
 	}
 	
 	//From still, decide what the next mode should be
@@ -128,6 +140,7 @@ public:
 		else if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
 			prevmode=mode;
 			mode = LEFT_ROTATE;
+<<<<<<< HEAD
 			refAngle = angle;
 			ROS_INFO("Left rotate:First if");
 			angcomp = (int)((angle/(PI/2.0))+0.5) * PI/2.0;	//Compute the closest angle multiple of PI/2
@@ -136,13 +149,29 @@ public:
 			mode = RIGHT_ROTATE;
 			refAngle = angle;
 			angcomp = (int)((angle/(PI/2.0))+0.5) * PI/2.0;	//Compute the closest angle multiple of PI/2
+=======
+			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 + PI/2.0;
+	//		ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
+	//	ROS_INFO("Left rotate:First if");
+		} else if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
+			prevmode=mode;
+			mode = RIGHT_ROTATE;
+			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 - PI/2.0;
+	//		ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
+>>>>>>> temp
 		} else {
 			//TODO go back
 			prevmode=mode;
 			mode = LEFT_ROTATE;
+<<<<<<< HEAD
 			refAngle = angle;
 			ROS_INFO("Left rotate:Second if");
 			angcomp = (int)((angle/(PI/2.0))+0.5) * PI/2.0;	//Compute the closest angle multiple of PI/2
+=======
+			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 + PI/2.0;
+//			ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
+	//		ROS_INFO("Left rotate:Second if");
+>>>>>>> temp
 		}
 
 		return mode;
@@ -150,13 +179,15 @@ public:
 	
 	void publish()
 	{
-		ROS_INFO("The current angle is %lf", (angle*180)/M_PI);
-		ROS_INFO("The reference angle is %lf", refAngle);
-		ROS_INFO("IR front_left: [%lf]", in_ir.front_left);
-		ROS_INFO("IR back_left: [%lf]", in_ir.back_left);
-		ROS_INFO("IR front_right: [%lf]", in_ir.front_right);
-		ROS_INFO("IR back_right: [%lf]", in_ir.back_right);
-		ROS_INFO("IR front_center: [%lf]", in_ir.front_center);
+		//ROS_INFO("The current angle is %lf", (angle*180)/M_PI);	//degrees
+		ROS_INFO("The current angle is %lf", (angle*360)/TWOPI);	//radians
+		ROS_INFO("The reference angle is %lf", (refAngle*360)/TWOPI);
+		ROS_INFO("The target angle is %lf", (targetAngle*360)/TWOPI);
+//		ROS_INFO("IR front_left: [%lf]", in_ir.front_left);
+//		ROS_INFO("IR back_left: [%lf]", in_ir.back_left);
+//		ROS_INFO("IR front_right: [%lf]", in_ir.front_right);
+//		ROS_INFO("IR back_right: [%lf]", in_ir.back_right);
+//		ROS_INFO("IR front_center: [%lf]", in_ir.front_center);
 		switch (mode) {
 					
 			case STILL:
@@ -182,7 +213,11 @@ public:
 				
 				prevmode == LEFT_WALL_FOLLOW;
 				//out_twist.angular.z = alpha * (in_ir.front_left - in_ir.back_left);// [m/s]
+<<<<<<< HEAD
 				out_twist.angular.z = alpha * (12 - (0.5)*(in_ir.front_left + in_ir.back_left));// [m/s]
+=======
+				out_twist.angular.z = alpha * ( (0.5*(in_ir.front_left + in_ir.back_left)) - MINDIST + (alpha1*(in_ir.front_left - in_ir.back_left))); // [m/s]
+>>>>>>> temp
 				out_twist.linear.x = v;
 				
 				//w = alpha * (MINDIST-0.5(in_ir.front_left+in_ir.back_left) + 2*(ir[0]-ir[1]));
@@ -203,36 +238,63 @@ public:
 				}		
 				//Rohit: added the negative sign here
 				//out_twist.angular.z = -alpha * (in_ir.front_right - in_ir.back_right);// [m/s]
+<<<<<<< HEAD
 				out_twist.angular.z = alpha * (12 - (0.5)*(in_ir.front_right + in_ir.back_right));// [m/s]
+=======
+				out_twist.angular.z = alpha * ( MINDIST - (0.5*(in_ir.front_right + in_ir.back_right))  - (alpha1*(in_ir.front_right - in_ir.back_right))); // [m/s]
+>>>>>>> temp
 				out_twist.linear.x = v;
 				//w = alpha * (MINDIST-0.5(in_ir.front_right+in_ir.back_right) + 2*(ir[2]-ir[3]));
 				break;
 
 
 			case LEFT_ROTATE:
+<<<<<<< HEAD
 				ROS_INFO("fabs(angle - refAngle) is %lf. angcomp+M_PI_2-angle is %lf.",
 				fabs(angle - refAngle), (angcomp+M_PI_2-angle) );
 				if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+=======
+	//			ROS_INFO("angle & targetAngle are %lf & %lf.", angle, targetAngle);
+				//if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+				if (angle >= (targetAngle-0.2)) {
+>>>>>>> temp
 					//ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the right wall
 					prevmode = mode;
 					mode = STILL;
 				}	
+<<<<<<< HEAD
 				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*.8;
+=======
+				out_twist.angular.z = 0.8;	
+	//			out_twist.angular.z = ((M_PI_2-fabs(angle-refAngle))*1.5) + 0.6;			
+>>>>>>> temp
 				out_twist.linear.x = 0.0;
 				break;
 
 
 			case RIGHT_ROTATE:
+<<<<<<< HEAD
 				ROS_INFO("fabs(angle - refAngle) is %lf. angcomp+M_PI_2-angle is %lf.",
 				fabs(angle - refAngle), (angcomp+M_PI_2-angle) );
 				if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+=======
+	//			ROS_INFO("angle & targetAngle are %lf & %lf.", angle, targetAngle);
+				//if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+				//if (fabs(angle-targetAngle) < 0.1) {
+				if (angle <= (targetAngle+0.2)) {
+>>>>>>> temp
 					//ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the left wall
 					prevmode = mode;
 					mode = STILL;
 				}
+<<<<<<< HEAD
 				out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*.8;
+=======
+//					out_twist.angular.z = -((M_PI_2-fabs(angle-refAngle))*1.5) - 0.6;
+				out_twist.angular.z = -0.8;//-(M_PI_2-fabs(angle-refAngle))*.8;
+>>>>>>> temp
 				out_twist.linear.x = 0.0;
 				break;
 
@@ -250,7 +312,7 @@ public:
 					mode = RIGHT_WALL_FOLLOW;
 				} else {
 					//Keep Straight
-					out_twist.linear.x = .1;
+					out_twist.linear.x = .15;
 					out_twist.angular.z = 0.0;
 				}
 				break;
@@ -263,7 +325,11 @@ public:
 					break;
 				}	
 				if (fabs(in_ir.front_right - in_ir.back_right) > 3.5) {
+<<<<<<< HEAD
 					out_twist.angular.z = -alpha_align*2.5* (in_ir.front_right - in_ir.back_right);
+=======
+					out_twist.angular.z = -alpha_align*3* (in_ir.front_right - in_ir.back_right);
+>>>>>>> temp
 				} else {
 						prevmode = mode;
 						mode = STILL;
@@ -278,7 +344,11 @@ public:
 					break;
 				}
 				if (fabs(in_ir.front_left - in_ir.back_left) > 3.5) {
+<<<<<<< HEAD
 					out_twist.angular.z = alpha_align*2.5* (in_ir.front_left - in_ir.back_left);
+=======
+					out_twist.angular.z = alpha_align*3* (in_ir.front_left - in_ir.back_left);
+>>>>>>> temp
 				} else {
 						prevmode = mode;
 						mode = STILL;
@@ -290,6 +360,7 @@ public:
 		twist_publisher_.publish(out_twist);
 		mode_publisher_.publish(out_mode);
 		prev_mode_publisher_.publish(out_previous_mode);
+		ROS_INFO("the twist is = %lf", out_twist.angular.z);
 		ROS_INFO("The current mode is %s", MODE_NAMES[mode]);
 		ROS_INFO("The previous mode is %s", MODE_NAMES[prevmode]);
 	}
@@ -301,7 +372,11 @@ int main(int argc, char **argv)
 
 	ros::init(argc, argv, "maze_navigator");
 	maze_navigator_node mnnode;
+<<<<<<< HEAD
 	ros::Rate loop_rate(100);
+=======
+	ros::Rate loop_rate(CTRL_FREQ*5);
+>>>>>>> temp
 	
 	//for (int i = 0; i < 20; ++i) {
 	//	loop_rate.sleep();
