@@ -1,15 +1,15 @@
 #include "ros/ros.h"
 #include <ras_arduino_msgs/Encoders.h>
 #include <ir_reader/distance_readings.h>
-#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Float64.h>
 #include <robo_globals.h>
 #include <std_msgs/Int16.h>
 #include <std_msgs/String.h>
 #include <cmath>
 
-#define MINDIST 12	//12 centimeters
-#define STOPDIST 22	//12 centimeters
+#define MINDIST 15	//15 centimeters
+#define STOPDIST 17	//17 centimeters
 
 #define IR_SHORT_LIMIT 25
 
@@ -36,7 +36,7 @@ private:
 
 	int mode;
 	int prevmode; // Rohit: to know the previous mode
-	double alpha; // P gain {left, right}	//DON'T CHANGE THIS DURING RUNTIME
+	double alpha, alpha1; // P gain {left, right}	//DON'T CHANGE THIS DURING RUNTIME
 	double alpha_align;
 	double angle;	//IMU angle
 	double v; // linear velocity constant
@@ -44,30 +44,32 @@ private:
 	double refAngle;
 	double delta_enc[2];
 	double angcomp;
+	double targetAngle;
 
 
 	geometry_msgs::Twist out_twist;
 	ir_reader::distance_readings in_ir;
 	//std_msgs::String out_mode;
-		std_msgs::Int16 out_mode;
-		std_msgs::Int16 out_previous_mode;
+	std_msgs::Int16 out_mode;
+	std_msgs::Int16 out_previous_mode;
 
 public:
 
-	bool hasIR, rotaBool;
+	bool hasIR;
 
 	ros::NodeHandle n_;
-    ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
+	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
 	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_;
-                                //0.0175
-	maze_navigator_node() : alpha(0.05), alpha_align(0.0195), v(.18), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+                                
+                                //alpha(0.0255), alpha1(2.53586),
+	maze_navigator_node() : alpha(0.0245), alpha1(2.32586), alpha_align(0.0195), v(.17), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
 	{
 		hasIR = false;
 		n_ = ros::NodeHandle("~");
 		ir_reader_subscriber_ = n_.subscribe("/ir_reader_node/cdistance", 1, &maze_navigator_node::irCallback, this);
 		encoders_subscriber_ = n_.subscribe("/arduino/encoders", 1, &maze_navigator_node::encodersCallback, this);
 		imu_subscriber_ = n_.subscribe("/imu_angle", 1, &maze_navigator_node::imuAngleCallback, this);
-        odometry_subscriber_ = n_.subscribe("/posori/Twist", 1, &maze_navigator_node::odometryCallback, this);
+		odometry_subscriber_ = n_.subscribe("/posori/Twist", 1, &maze_navigator_node::odometryCallback, this);
 		twist_publisher_ = n_.advertise<geometry_msgs::Twist>("/motor_controller/twist", 1000);
 	//Rohit: publish mode
 	//	mode_publisher_ = n_.advertise<std_msgs::String>("/maze_navigator/mode", 1000);
@@ -88,89 +90,84 @@ public:
 	}
 
 	void imuAngleCallback(const std_msgs::Float64::ConstPtr &msg) {
-//		angle = msg->data;
-		
+		//angle = msg->data;
 	}
 
-    void odometryCallback(const geometry_msgs::Twist::ConstPtr &msg) {
-        angle = msg->angular.z;
-    }
+	void odometryCallback(const geometry_msgs::TwistStamped::ConstPtr &msg) {
+		angle = msg->twist.angular.z;
+	}
+	
+	//From still, decide what the next mode should be
+	int decideNextMode() {
+		out_twist.linear.x = 0.0;
+		out_twist.angular.z = 0.0;			
+		if (delta_enc[0] != 0 || delta_enc[1] != 0) {
+			//Do nothing
+			return STILL;
+		}
+		
+		//Rohit: check the previous mode and accordingly decide the next mode   
+		if (prevmode==RIGHT_WALL_ALIGN){ 	
+			prevmode=mode;
+			mode = RIGHT_WALL_FOLLOW;
+		}
+		
+		else if (prevmode==LEFT_WALL_ALIGN){	
+			prevmode=mode;
+			mode = LEFT_WALL_FOLLOW;						
+		}
 
+		else if(prevmode==LEFT_ROTATE){
+			prevmode=mode;
+			mode = RIGHT_WALL_ALIGN;
+		}
+
+		else if(prevmode==RIGHT_ROTATE){
+			prevmode=mode;
+			mode = LEFT_WALL_ALIGN;
+		}
+		
+		else if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
+			prevmode=mode;
+			mode = LEFT_ROTATE;
+			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 + PI/2.0;
+	//		ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
+	//	ROS_INFO("Left rotate:First if");
+		} else if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
+			prevmode=mode;
+			mode = RIGHT_ROTATE;
+			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 - PI/2.0;
+	//		ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
+		} else {
+			//TODO go back
+			prevmode=mode;
+			mode = LEFT_ROTATE;
+			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 + PI/2.0;
+//			ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
+	//		ROS_INFO("Left rotate:Second if");
+		}
+
+		return mode;
+	}
+	
 	void publish()
 	{
-		ROS_INFO("The current angle is %lf", (angle*180)/M_PI);
-		ROS_INFO("The reference angle is %lf", refAngle);
-		ROS_INFO("IR front_left: [%lf]", in_ir.front_left);
-		ROS_INFO("IR back_left: [%lf]", in_ir.back_left);
-		ROS_INFO("IR front_right: [%lf]", in_ir.front_right);
-		ROS_INFO("IR back_right: [%lf]", in_ir.back_right);
-		ROS_INFO("IR front_center: [%lf]", in_ir.front_center);
+		//ROS_INFO("The current angle is %lf", (angle*180)/M_PI);	//degrees
+		ROS_INFO("The current angle is %lf", (angle*360)/TWOPI);	//radians
+		ROS_INFO("The reference angle is %lf", (refAngle*360)/TWOPI);
+		ROS_INFO("The target angle is %lf", (targetAngle*360)/TWOPI);
+//		ROS_INFO("IR front_left: [%lf]", in_ir.front_left);
+//		ROS_INFO("IR back_left: [%lf]", in_ir.back_left);
+//		ROS_INFO("IR front_right: [%lf]", in_ir.front_right);
+//		ROS_INFO("IR back_right: [%lf]", in_ir.back_right);
+//		ROS_INFO("IR front_center: [%lf]", in_ir.front_center);
 		switch (mode) {
 					
 			case STILL:
-//Rohit: When in still, decide upon the next mode based on the previous mode
-				
-								
-				out_twist.linear.x = 0.0;
-				out_twist.angular.z = 0.0;			
-				if (delta_enc[0] != 0 || delta_enc[1] != 0) {
-				}
-
-				//Rohit: check the previous mode and accordingly decide the next mode   
-				else if (prevmode==RIGHT_WALL_ALIGN){ 
-					
-		//			if (fabs(in_ir.front_right - in_ir.back_right) < 2){			
-						prevmode=mode;
-						mode = RIGHT_WALL_FOLLOW;	
-						
-			//		}
-			//	else{
-			//			prevmode=mode;
-			//			mode = RIGHT_WALL_ALIGN;
-			//		}								
-					break;
-				}
-				
-				else if (prevmode==LEFT_WALL_ALIGN){
-			//		if (fabs(in_ir.front_left - in_ir.back_left) < 2){			
-						prevmode=mode;
-						mode = LEFT_WALL_FOLLOW;	
-			//		}
-			//		else{
-			//			prevmode=mode;
-			//			mode = LEFT_WALL_ALIGN;
-			//		}								
-					break;
-				}
-
-				else if(prevmode==LEFT_ROTATE){
-					mode = RIGHT_WALL_ALIGN;
-				}
-
-				else if(prevmode==RIGHT_ROTATE){
-					mode = LEFT_WALL_ALIGN;
-				}
-				
-				else if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
-					prevmode=mode;
-					rotaBool=true;
-					mode = LEFT_ROTATE;
-					refAngle = angle;
-					ROS_INFO("Left rotate:First if");
-				} else if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
-					prevmode=mode;
-					rotaBool=true;
-					mode = RIGHT_ROTATE;
-					refAngle = angle;
-				} else {
-					//TODO go back
-					prevmode=mode;
-					mode = LEFT_ROTATE;
-					rotaBool=true;
-					refAngle = angle;
-					ROS_INFO("Left rotate:Second if");
-				}
+				//Rohit: When in still, decide upon the next mode based on the previous mode
+				decideNextMode();
 				break;
+
 
 			case LEFT_WALL_FOLLOW:
 				if (in_ir.front_center<STOPDIST) {
@@ -187,24 +184,14 @@ public:
 					break;
 				}
 				
-				//Rohit: allign first and then give linear velocity
-				
-//				if (prevmode == STILL){
-//				while ((in_ir.front_left - in_ir.back_left) > 2){
-//				out_twist.angular.z = alpha * (in_ir.front_left - in_ir.back_left);
-//				}
-				
-//				while ((in_ir.back_left - in_ir.front_left) > 2){
-//				out_twist.angular.z = -alpha * (in_ir.back_left - in_ir.front_left);
-//				}
-//				}
 				prevmode == LEFT_WALL_FOLLOW;
 				//out_twist.angular.z = alpha * (in_ir.front_left - in_ir.back_left);// [m/s]
-				out_twist.angular.z = alpha * (MINDIST-0.5*(in_ir.front_left+in_ir.back_left) + 2*(in_ir.front_left - in_ir.back_left));// [m/s]
+				out_twist.angular.z = alpha * ( (0.5*(in_ir.front_left + in_ir.back_left)) - MINDIST + (alpha1*(in_ir.front_left - in_ir.back_left))); // [m/s]
 				out_twist.linear.x = v;
 				
 				//w = alpha * (MINDIST-0.5(in_ir.front_left+in_ir.back_left) + 2*(ir[0]-ir[1]));
 				break;
+
 
 			case RIGHT_WALL_FOLLOW:
 				if (in_ir.front_center<STOPDIST) {
@@ -220,105 +207,42 @@ public:
 				}		
 				//Rohit: added the negative sign here
 				//out_twist.angular.z = -alpha * (in_ir.front_right - in_ir.back_right);// [m/s]
-				out_twist.angular.z = alpha * (MINDIST-0.5*(in_ir.front_right+in_ir.back_right) + 2*(in_ir.front_right - in_ir.back_right));
+				out_twist.angular.z = alpha * ( MINDIST - (0.5*(in_ir.front_right + in_ir.back_right))  - (alpha1*(in_ir.front_right - in_ir.back_right))); // [m/s]
 				out_twist.linear.x = v;
 				//w = alpha * (MINDIST-0.5(in_ir.front_right+in_ir.back_right) + 2*(ir[2]-ir[3]));
 				break;
 
+
 			case LEFT_ROTATE:
-		
-	//	for (int i=-4; i<5; i++)
-		for (int i=0; i<5; i++)
-		{
-		ROS_INFO("rotaBool1=%d", rotaBool);
-		ROS_INFO("Comp = %lf",fabs(angle-i*M_PI/2));
-		if(rotaBool==true)
-		{
-		if (fabs(angle-(i*M_PI/2)) <(TWOPI/6)){
-			angcomp=i*M_PI/2;
-			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
-			rotaBool=false;
-					}
-	  }
-	  }	
-		if (fabs(angle - refAngle) >=1.15){
-	//	if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
-//	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
-					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
+	//			ROS_INFO("angle & targetAngle are %lf & %lf.", angle, targetAngle);
+				//if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+				if (angle >= (targetAngle-0.2)) {
+					//ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
 					//Align to the right wall
 					prevmode = mode;
 					mode = STILL;
-					}	
-		//TODO
-			//Rohit: kept angle smaller since it takes a while to judge whether it has turned 
-		// if (fabs(angle-refAngle) >= angcomp){ 
-		//	if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
-		//			ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
-					//Align to the right wall
-		//			prevmode = mode;
-		//			mode = STILL;
-		//			}				
-				
-
-				//Only for stationary demo
-//			if (in_ir.front_right < IR_SHORT_LIMIT && in_ir.back_right <
-//			IR_SHORT_LIMIT && fabs(in_ir.front_right - in_ir.back_right) < 2) {
-//				mode = RIGHT_WALL_FOLLOW;
-//				break;
-//			}
-			
-//			out_twist.angular.z = 1.3;
-				out_twist.angular.z = (M_PI_2-fabs(angle-refAngle))*.68;
-				out_twist.linear.x = 0.0;
-			break;
-				
-
-			case RIGHT_ROTATE:
-		for (int i=0; i<5; i++)
-		{
-		ROS_INFO("rotaBool1=%d", rotaBool);
-		ROS_INFO("Comp = %lf",fabs(fabs(angle)-fabs(i*M_PI/2)));
-		if(rotaBool==true)
-		{
-		if (fabs(angle-(i*M_PI/2)) <(TWOPI/6)){
-			angcomp=i*M_PI/2;
-//			ROS_INFO("Angcomp= %lf", (angcomp/M_PI)*180 );
-			rotaBool=false;
-					}
-	  }
-	  }	
-		if (fabs(angle - refAngle) >=1.15){
-//		if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
-//	  if (fabs(angle - refAngle) >= (angcomp+M_PI_2-angle)){ 
-					ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
-					//Align to the right wall
-					prevmode = mode;
-					mode = STILL;
-					}
-			
-			
-				//TODO
-//				if (in_ir.front_left < IR_SHORT_LIMIT && in_ir.back_left <
-	//			IR_SHORT_LIMIT && fabs(in_ir.front_left - in_ir.back_left) < 2)
-          //      if (fabs(angle-refAngle) >= 1.2){
-					//Align to the left wall
-					//prevmode = mode;
-					//mode = STILL;				
-				//}
-
-				//Only for stationary demo
-//			if (in_ir.front_left < IR_SHORT_LIMIT && in_ir.back_left <
-//			IR_SHORT_LIMIT && fabs(in_ir.front_left - in_ir.back_left) < 2) {
-//				mode = LEFT_WALL_FOLLOW;
-//				break;
-//			}
-				//out_twist.angular.z = -1.3;
-				//out_twist.angular.z = -0.7;
-				
-				
-				out_twist.angular.z = -(M_PI_2-fabs(angle-refAngle))*0.68;
+				}	
+				out_twist.angular.z = 0.8;	
+	//			out_twist.angular.z = ((M_PI_2-fabs(angle-refAngle))*1.5) + 0.6;			
 				out_twist.linear.x = 0.0;
 				break;
+
+
+			case RIGHT_ROTATE:
+	//			ROS_INFO("angle & targetAngle are %lf & %lf.", angle, targetAngle);
+				//if (fabs(angle - refAngle) >=(angcomp+M_PI_2-angle)){
+				//if (fabs(angle-targetAngle) < 0.1) {
+				if (angle <= (targetAngle+0.2)) {
+					//ROS_INFO("Difference rotation = %lf", (1/M_PI)*(angcomp+M_PI_2)*180 );
+					//Align to the left wall
+					prevmode = mode;
+					mode = STILL;
+				}
+//					out_twist.angular.z = -((M_PI_2-fabs(angle-refAngle))*1.5) - 0.6;
+				out_twist.angular.z = -0.8;//-(M_PI_2-fabs(angle-refAngle))*.8;
+				out_twist.linear.x = 0.0;
+				break;
+
 
 			case STRAIGHT_FORWARD:
 				//TODO
@@ -333,44 +257,47 @@ public:
 					mode = RIGHT_WALL_FOLLOW;
 				} else {
 					//Keep Straight
-					out_twist.linear.x = .1;
+					out_twist.linear.x = .15;
 					out_twist.angular.z = 0.0;
 				}
 				break;
+
 				
-				case RIGHT_WALL_ALIGN:
-					if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
+			case RIGHT_WALL_ALIGN:
+				if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
 					prevmode=mode;
 					mode = STRAIGHT_FORWARD;
 					break;
 				}	
-					if (fabs(in_ir.front_right - in_ir.back_right) > 3.5) {
-						out_twist.angular.z = -alpha_align*2* (in_ir.front_right - in_ir.back_right);
-					} else {
-							prevmode = mode;
-							mode = STILL	;
-					}
+				if (fabs(in_ir.front_right - in_ir.back_right) > 3.5) {
+					out_twist.angular.z = -alpha_align*3* (in_ir.front_right - in_ir.back_right);
+				} else {
+						prevmode = mode;
+						mode = STILL;
+				}
 				break;
+
 				
-				case LEFT_WALL_ALIGN:
-					if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
+			case LEFT_WALL_ALIGN:
+				if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
 					prevmode=mode;
 					mode = STRAIGHT_FORWARD;
 					break;
 				}
-					if (fabs(in_ir.front_left - in_ir.back_left) > 3.5) {
-						out_twist.angular.z = alpha_align*2* (in_ir.front_left - in_ir.back_left);
-					} else {
-							prevmode = mode;
-							mode = STILL;
-					}	
-					break;
+				if (fabs(in_ir.front_left - in_ir.back_left) > 3.5) {
+					out_twist.angular.z = alpha_align*3* (in_ir.front_left - in_ir.back_left);
+				} else {
+						prevmode = mode;
+						mode = STILL;
+				}	
+				break;
 		}
 		out_mode.data=mode;
 		out_previous_mode.data=prevmode;
 		twist_publisher_.publish(out_twist);
 		mode_publisher_.publish(out_mode);
 		prev_mode_publisher_.publish(out_previous_mode);
+		ROS_INFO("the twist is = %lf", out_twist.angular.z);
 		ROS_INFO("The current mode is %s", MODE_NAMES[mode]);
 		ROS_INFO("The previous mode is %s", MODE_NAMES[prevmode]);
 	}
@@ -382,7 +309,7 @@ int main(int argc, char **argv)
 
 	ros::init(argc, argv, "maze_navigator");
 	maze_navigator_node mnnode;
-	ros::Rate loop_rate(30);
+	ros::Rate loop_rate(CTRL_FREQ*5);
 	
 	//for (int i = 0; i < 20; ++i) {
 	//	loop_rate.sleep();

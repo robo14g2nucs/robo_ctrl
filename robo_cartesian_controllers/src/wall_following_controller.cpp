@@ -25,7 +25,7 @@ public:
 	double w; // angular_vel
 
 
-	wall_following_controller_node() : alpha(0.0271), v(0.19), w(0)
+	wall_following_controller_node() : alpha(0.02705), v(0.15), w(0)
 	{
 		n_ = ros::NodeHandle("~");
 		ir_reader_subscriber_ = n_.subscribe("/ir_reader_node/cdistance", 1, &wall_following_controller_node::irCallback, this);
@@ -50,7 +50,7 @@ public:
 	void computeAngVel ()
 	{
 	//	w = alpha * (ir_[0] - ir_[1]);// [m/s]
-		w = alpha * (-MINDIST + (0.5*(ir_[0]+ir_[1])) + (2.53*(ir_[0]-ir_[1])));
+		w = alpha * ( (0.5*(ir_[0]+ir_[1])) - MINDIST + (2.53586*(ir_[0]-ir_[1])));
 		// angular_vel = alpha*( distance_sensor1 - distance_sensor2)
 		if (ir_[4]>STOPDIST)
 		{

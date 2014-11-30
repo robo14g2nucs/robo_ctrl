@@ -37,7 +37,7 @@ public:
 	const double b; // separation of the two central wheels in [m]
 	const double r; //  wheel radius in [m]
 
-	motor_controller() : ticks(TICKSPR), b(WHEEL_BASE), r(WHEEL_RADIUS), control_frequency(100)
+	motor_controller() : ticks(TICKSPR), b(WHEEL_BASE), r(WHEEL_RADIUS), control_frequency(CTRL_FREQ*5)
 	{
 		Kp[0] = 1.085; //0.09;
 		Kp[1] = 1.14;//0.103;
@@ -178,8 +178,8 @@ public:
 
 		computePwm();
 
-		std::cerr << "Left PWM: " << pwm_[0] << std::endl;
-		std::cerr << "Right PWM: " << pwm_[1] << std::endl;
+	//	std::cerr << "Left PWM: " << pwm_[0] << std::endl;
+	//	std::cerr << "Right PWM: " << pwm_[1] << std::endl;
 
 		ras_arduino_msgs::PWM msg;
 		msg.PWM1 = (int)pwm_[0];
