@@ -144,6 +144,7 @@ public:
         Ffront_center = Ffront_center * (1-alphama) + res[4] * (alphama);
         Fback_center = Fback_center * (1-alphama) + res[5] * (alphama);
 
+		cdmsg.header.stamp = ros::Time::now();
 		cdmsg.front_left = Ffront_left;
 		cdmsg.back_left= Fback_left;
 		cdmsg.front_right = Ffront_right;
