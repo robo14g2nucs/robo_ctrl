@@ -44,8 +44,8 @@ public:
 		double ad = (denc1-denc2)*DEGTOM/WHEEL_BASE;
 		double ld = (denc1+denc2)*DEGTOM/2.0;
 		
-		if (fabs(ad) <= 0.0) {
-		//if (true) {
+		//if (fabs(ad) <= 0.0) {
+		if (true) {
 			curAngle += ad;
 			curX -= (ld*cos(curAngle));
 			curY -= (ld*sin(curAngle));

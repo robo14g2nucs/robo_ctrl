@@ -8,7 +8,7 @@
 #include <std_msgs/String.h>
 #include <cmath>
 
-#define MINDIST 15	//15 centimeters
+#define MINDIST 13	//15 centimeters
 #define STOPDIST 17	//17 centimeters
 
 #define IR_SHORT_LIMIT 25
@@ -45,6 +45,8 @@ private:
 	double delta_enc[2];
 	double angcomp;
 	double targetAngle;
+	double irdiff; //Difference between IR_sensors
+	double irav; //IR_sensors average
 
 
 	geometry_msgs::Twist out_twist;
@@ -60,9 +62,9 @@ public:
 	ros::NodeHandle n_;
 	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
 	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_;
-                                
-                                //alpha(0.0255), alpha1(2.53586),
-	maze_navigator_node() : alpha(0.0245), alpha1(2.32586), alpha_align(0.0195), v(.17), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+                                //alpha(0.0177) for wall-following without reference distance
+                                //alpha(0.0245), alpha1(2.53586),
+	maze_navigator_node() : alpha(0.0175), alpha1(0.01), alpha_align(0.0195), v(.17), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
 	{
 		hasIR = false;
 		n_ = ros::NodeHandle("~");
@@ -184,9 +186,16 @@ public:
 					break;
 				}
 				
-				prevmode == LEFT_WALL_FOLLOW;
-				//out_twist.angular.z = alpha * (in_ir.front_left - in_ir.back_left);// [m/s]
-				out_twist.angular.z = alpha * ( (0.5*(in_ir.front_left + in_ir.back_left)) - MINDIST + (alpha1*(in_ir.front_left - in_ir.back_left))); // [m/s]
+				//prevmode == LEFT_WALL_FOLLOW;
+				
+				irav = 0.5*(in_ir.front_left + in_ir.back_left);
+				irdiff = in_ir.front_left - in_ir.back_left;
+				
+				out_twist.angular.z = alpha * (irdiff);// [m/s]
+				if(fabs(MINDIST-irav) > 1)		
+					out_twist.angular.z += alpha1 * (irav - MINDIST);
+					
+				//out_twist.angular.z = alpha * (irav - MINDIST + (alpha1 * irdiff)); // [m/s]
 				out_twist.linear.x = v;
 				
 				//w = alpha * (MINDIST-0.5(in_ir.front_left+in_ir.back_left) + 2*(ir[0]-ir[1]));
@@ -205,9 +214,15 @@ public:
 					mode = STRAIGHT_FORWARD;
 					break;
 				}		
-				//Rohit: added the negative sign here
-				//out_twist.angular.z = -alpha * (in_ir.front_right - in_ir.back_right);// [m/s]
-				out_twist.angular.z = alpha * ( MINDIST - (0.5*(in_ir.front_right + in_ir.back_right))  - (alpha1*(in_ir.front_right - in_ir.back_right))); // [m/s]
+			  
+			  
+				irav = 0.5*(in_ir.front_right + in_ir.back_right);
+				irdiff = in_ir.front_right - in_ir.back_right;
+				
+				out_twist.angular.z = - alpha * (irdiff);// [m/s]
+				if(fabs(MINDIST-irav) > 1)		
+					out_twist.angular.z += alpha1 * (-irav + MINDIST);
+				//out_twist.angular.z = alpha * ( MINDIST - (irav)  - (alpha1 * irdiff)); // [m/s]
 				out_twist.linear.x = v;
 				//w = alpha * (MINDIST-0.5(in_ir.front_right+in_ir.back_right) + 2*(ir[2]-ir[3]));
 				break;

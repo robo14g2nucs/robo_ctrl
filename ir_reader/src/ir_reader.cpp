@@ -37,7 +37,7 @@ public:
   double Fback_center;
   bool Fboolean;
 
-	ir_reader_node() : alphama(0.6), Fboolean(0)
+	ir_reader_node() : alphama(0.55), Fboolean(0)
 //	sa(2963.0), sb(-0.047), sc(29.98), sd(-0.004048),
 //	//sa(37770), sb(-0.07152), sc(36.71), sd(-0.004758),
 //	la(249.7), lb(-0.01656), lc(31.15), ld(-0.002155)
