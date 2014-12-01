@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 #include <ras_arduino_msgs/Encoders.h>
 #include <ir_reader/distance_readings.h>
-#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Point.h>
 #include <std_msgs/Float64.h>
 #include <robo_globals.h>
@@ -48,7 +48,7 @@ private:
 	geometry_msgs::Point out_leftpoint;
 	ir_reader::distance_readings in_ir;
 	std_msgs::String in_mode;
-	geometry_msgs::Twist in_pose;
+	geometry_msgs::TwistStamped in_pose;
 	
 public:
 
@@ -90,8 +90,8 @@ public:
 		in_ir = *msg;
 	}
 
-	void poseCallback(const geometry_msgs::Twist::ConstPtr &msg) {
-		in_pose = *msg;		
+	void poseCallback(const geometry_msgs::TwistStamped::ConstPtr &msg) {
+		in_pose = *msg;
 	}
 
 	void publish()
@@ -100,74 +100,74 @@ public:
 //	ROS_INFO("The mode in mapping is %d", current_mapping_mode);
 	ROS_INFO("The left wallpoint x and y are %lf, %lf", out_leftpoint.x, out_leftpoint.y);
 	ROS_INFO("The right wallpoint x and y are %lf, %lf", out_rightpoint.x, out_rightpoint.y);
-	ROS_INFO("The orientation is %lf", in_pose.angular.z);
+	ROS_INFO("The orientation is %lf", in_pose.twist.angular.z);
 		switch (current_mapping_mode) {
 			case LEFT_WALL_FOLLOW:
 			case RIGHT_WALL_FOLLOW:	
 //			if (modechange==1){
 //				ROS_INFO("am in modechange");
 
-					if(fabs((in_pose.angular.z+TWOPI)-(TWOPI/4))<TWOPI/6){
+					if(fabs((in_pose.twist.angular.z+TWOPI)-(TWOPI/4))<TWOPI/6){
 						if(in_ir.back_left<IR_SHORT_LIMIT){
-		//					out_leftpoint.x = in_pose.linear.x -in_ir.back_left/100 + LBXOFF/100;
-								out_leftpoint.x = in_pose.linear.x + in_ir.back_left/100 + LBXOFF/100;  
-		//				out_leftpoint.y = in_pose.y - pose_ref.y; 
-							out_leftpoint.y = in_pose.linear.y;
+		//					out_leftpoint.x = in_pose.twist.linear.x -in_ir.back_left/100 + LBXOFF/100;
+								out_leftpoint.x = in_pose.twist.linear.x + in_ir.back_left/100 + LBXOFF/100;  
+		//				out_leftpoint.y = in_pose.twist.y - pose_ref.y; 
+							out_leftpoint.y = in_pose.twist.linear.y;
 							out_leftpoint.z=0;
 						}
 						if(in_ir.back_right<IR_SHORT_LIMIT){
-		//					out_rightpoint.x = in_pose.linear.x + in_ir.back_right/100 + RBXOFF/100; 
-							out_rightpoint.x = in_pose.linear.x - in_ir.back_right/100 + RBXOFF/100; 
+		//					out_rightpoint.x = in_pose.twist.linear.x + in_ir.back_right/100 + RBXOFF/100; 
+							out_rightpoint.x = in_pose.twist.linear.x - in_ir.back_right/100 + RBXOFF/100; 
 		//					out_rightpoint.y = pose.y - pose_ref.y; 
-							out_rightpoint.y = in_pose.linear.y; 
+							out_rightpoint.y = in_pose.twist.linear.y; 
 							out_rightpoint.z=0;
 						}					
 				}
-					else if (fabs((in_pose.angular.z+TWOPI)-(TWOPI/2))<TWOPI/6){
+					else if (fabs((in_pose.twist.angular.z+TWOPI)-(TWOPI/2))<TWOPI/6){
 						if(in_ir.back_left<IR_SHORT_LIMIT){
 		//				out_leftpoint.x = in_pose_ref.x - pose.; //EDIT
-							out_leftpoint.x = in_pose.linear.x; //EDIT
-	//						out_leftpoint.y = in_pose.linear.y - in_ir.back_left/100 + LBXOFF/100; 
-							out_leftpoint.y = in_pose.linear.y + in_ir.back_left/100 + LBXOFF/100; 
+							out_leftpoint.x = in_pose.twist.linear.x; //EDIT
+	//						out_leftpoint.y = in_pose.twist.linear.y - in_ir.back_left/100 + LBXOFF/100; 
+							out_leftpoint.y = in_pose.twist.linear.y + in_ir.back_left/100 + LBXOFF/100; 
 							out_leftpoint.z=0;
 						}
 						if(in_ir.back_right<IR_SHORT_LIMIT){
-							out_rightpoint.x =in_pose.linear.x;
-		//					out_rightpoint.y = in_pose.linear.y + in_ir.back_right/100 + RBYOFF/100; //EDIT
-							out_rightpoint.y = in_pose.linear.y - in_ir.back_right/100 + RBYOFF/100; //EDIT
+							out_rightpoint.x =in_pose.twist.linear.x;
+		//					out_rightpoint.y = in_pose.twist.linear.y + in_ir.back_right/100 + RBYOFF/100; //EDIT
+							out_rightpoint.y = in_pose.twist.linear.y - in_ir.back_right/100 + RBYOFF/100; //EDIT
 							out_rightpoint.z=0;
 						}					
 					}
 					
-		//			else if (fabs(in_pose.angular.z-(3*TWOPI/4))<TWOPI/6){
-		else if (fabs((in_pose.angular.z+TWOPI)-(3*TWOPI/4))<TWOPI/6){				
+		//			else if (fabs(in_pose.twist.angular.z-(3*TWOPI/4))<TWOPI/6){
+		else if (fabs((in_pose.twist.angular.z+TWOPI)-(3*TWOPI/4))<TWOPI/6){				
 						if(in_ir.back_left<IR_SHORT_LIMIT){
 		//				out_leftpoint.x = pose_ref.x - pose.; //EDIT
-		//					out_leftpoint.x = in_pose.linear.x + in_ir.back_left/100 + LBXOFF/100; //EDIT
-							out_leftpoint.x = in_pose.linear.x - in_ir.back_left/100 + LBXOFF/100; //EDIT
-							out_leftpoint.y = in_pose.linear.y;  
+		//					out_leftpoint.x = in_pose.twist.linear.x + in_ir.back_left/100 + LBXOFF/100; //EDIT
+							out_leftpoint.x = in_pose.twist.linear.x - in_ir.back_left/100 + LBXOFF/100; //EDIT
+							out_leftpoint.y = in_pose.twist.linear.y;  
 							out_leftpoint.z=0;
 						}
 						if(in_ir.back_right<IR_SHORT_LIMIT){
-	//						out_rightpoint.x = in_pose.linear.x - in_ir.back_right/100 + RBXOFF/100; //EDIT
-							out_rightpoint.x = in_pose.linear.x + in_ir.back_right/100 + RBXOFF/100; //EDIT
-							out_rightpoint.y = in_pose.linear.y; 
+	//						out_rightpoint.x = in_pose.twist.linear.x - in_ir.back_right/100 + RBXOFF/100; //EDIT
+							out_rightpoint.x = in_pose.twist.linear.x + in_ir.back_right/100 + RBXOFF/100; //EDIT
+							out_rightpoint.y = in_pose.twist.linear.y; 
 							out_rightpoint.z=0;
 						}					
 					}
 					
-					else if (fabs(in_pose.angular.z-0)<TWOPI/6){
+					else if (fabs(in_pose.twist.angular.z-0)<TWOPI/6){
 						if(in_ir.back_left<IR_SHORT_LIMIT){
 		//				out_leftpoint.x = in_pose_ref.x - pose.; //EDIT
-							out_leftpoint.x = in_pose.linear.x; //EDIT
-						out_leftpoint.y = in_pose.linear.y -in_ir.back_left/100 + LBXOFF/100.0;
-	//				out_leftpoint.y = in_pose.linear.y + in_ir.back_left/100 + LBXOFF/100.0;
+							out_leftpoint.x = in_pose.twist.linear.x; //EDIT
+						out_leftpoint.y = in_pose.twist.linear.y -in_ir.back_left/100 + LBXOFF/100.0;
+	//				out_leftpoint.y = in_pose.twist.linear.y + in_ir.back_left/100 + LBXOFF/100.0;
 							out_leftpoint.z=0;
 						}
 						if(in_ir.back_right<IR_SHORT_LIMIT){
-							out_rightpoint.x = in_pose.linear.x;
-	//						out_rightpoint.y = in_pose.linear.y - in_ir.back_right/100 + RBYOFF/100.0; //EDIT
-							out_rightpoint.y = in_pose.linear.y + in_ir.back_right/100 + RBYOFF/100.0; //EDIT
+							out_rightpoint.x = in_pose.twist.linear.x;
+	//						out_rightpoint.y = in_pose.twist.linear.y - in_ir.back_right/100 + RBYOFF/100.0; //EDIT
+							out_rightpoint.y = in_pose.twist.linear.y + in_ir.back_right/100 + RBYOFF/100.0; //EDIT
 							out_rightpoint.z=0;
 						}					
 					}

@@ -132,19 +132,19 @@ public:
 		else if (in_ir.front_left > IR_SHORT_LIMIT || in_ir.back_left > IR_SHORT_LIMIT) {
 			prevmode=mode;
 			mode = LEFT_ROTATE;
-			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 + PI/2.0;
+			targetAngle = floor((angle/(PI/2.0))+0.5) * PI/2.0 + PI/2.0;
 	//		ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
 	//	ROS_INFO("Left rotate:First if");
 		} else if (in_ir.front_right > IR_SHORT_LIMIT || in_ir.back_right > IR_SHORT_LIMIT) {
 			prevmode=mode;
 			mode = RIGHT_ROTATE;
-			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 - PI/2.0;
+			targetAngle = floor((angle/(PI/2.0))+0.5) * PI/2.0 - PI/2.0;
 	//		ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
 		} else {
 			//TODO go back
 			prevmode=mode;
 			mode = LEFT_ROTATE;
-			targetAngle = (int)((angle/(PI/2.0))+0.5) * PI/2.0 + PI/2.0;
+			targetAngle = floor((angle/(PI/2.0))+0.5) * PI/2.0 + PI/2.0;
 //			ROS_INFO("target Angle = %lf", (targetAngle*360)/TWOPI);
 	//		ROS_INFO("Left rotate:Second if");
 		}
@@ -155,9 +155,8 @@ public:
 	void publish()
 	{
 		//ROS_INFO("The current angle is %lf", (angle*180)/M_PI);	//degrees
-		ROS_INFO("The current angle is %lf", (angle*360)/TWOPI);	//radians
-		ROS_INFO("The reference angle is %lf", (refAngle*360)/TWOPI);
-		ROS_INFO("The target angle is %lf", (targetAngle*360)/TWOPI);
+		ROS_INFO("The current angle is %lf", angle);	//radians
+		ROS_INFO("The target angle is %lf", targetAngle);
 //		ROS_INFO("IR front_left: [%lf]", in_ir.front_left);
 //		ROS_INFO("IR back_left: [%lf]", in_ir.back_left);
 //		ROS_INFO("IR front_right: [%lf]", in_ir.front_right);
