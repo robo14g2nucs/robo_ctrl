@@ -49,6 +49,7 @@ private:
 	double irdiff; //Difference between IR_sensors
 	double irav; //IR_sensors average
     ros::ServiceClient client; //client for map service
+    int updateCounter;
 
 	geometry_msgs::Twist out_twist;
 	geometry_msgs::Twist curPosOri;	//Current position and orientation according to the odometry
@@ -83,6 +84,7 @@ public:
 
             //service client
             client = n_.serviceClient<mapper::WallInFront>("wall_in_front");
+            updateCounter = 0;
 	}
 
 	void encodersCallback(const ras_arduino_msgs::Encoders::ConstPtr &msg)
@@ -171,13 +173,20 @@ public:
 //		ROS_INFO("IR front_center: [%lf]", in_ir.front_center);
 
         //get wall in front from map
-        mapper::WallInFront srv;
-        srv.request.position.x = curPosOri.linear.x;
-        srv.request.position.y = curPosOri.linear.y;
-        srv.request.angle = angle;
         bool wallInFront = false;
-        if(client.call(srv)){
-            wallInFront = srv.response.wallInFront;
+        //divide frequency
+        if(updateCounter >= 5){
+            updateCounter = 0;
+            mapper::WallInFront srv;
+            srv.request.position.x = curPosOri.linear.x;
+            srv.request.position.y = curPosOri.linear.y;
+            srv.request.angle = angle;
+            if(client.call(srv)){
+                wallInFront = srv.response.wallInFront;
+            }
+        }
+        else{
+            updateCounter++;
         }
 		switch (mode) {
 					
