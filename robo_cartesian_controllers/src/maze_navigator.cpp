@@ -9,6 +9,7 @@
 #include <std_msgs/String.h>
 #include <robo_globals.h>
 #include <cmath>
+#include <mapper/WallInFront.h>
 
 #define MINDIST 13	//13 centimeters
 #define STOPDIST 17	//17 centimeters
@@ -39,14 +40,15 @@ private:
 	int mode;
 	int prevmode; // Rohit: to know the previous mode
 	double alpha, alpha1; // P gain {left, right}	//DON'T CHANGE THIS DURING RUNTIME
-	double alpha_align;
+    double alpha_align;
 	double angle;	//angular orientation
-	double targetAngle;	//The angle to aim for when rotating
+    double targetAngle;	//The angle to aim for when rotating
 	double v; // linear velocity constant
 	double w; // angular_vel
 	double delta_enc[2];	//Read delta encoder values
 	double irdiff; //Difference between IR_sensors
 	double irav; //IR_sensors average
+    ros::ServiceClient client; //client for map service
 
 	geometry_msgs::Twist out_twist;
 	geometry_msgs::Twist curPosOri;	//Current position and orientation according to the odometry
@@ -57,7 +59,7 @@ private:
 
 public:
 
-	bool hasIR;
+    bool hasIR;
 
 	ros::NodeHandle n_;
 	ros::Subscriber ir_reader_subscriber_, imu_subscriber_, encoders_subscriber_, odometry_subscriber_;
@@ -78,6 +80,9 @@ public:
 			mode_publisher_ = n_.advertise<std_msgs::Int16>("/maze_navigator/mode", 1000);
 			prev_mode_publisher_ = n_.advertise<std_msgs::Int16>("/maze_navigator/prevmode", 1000);
 			node_creation_publisher_ = n_.advertise<geometry_msgs::Point>("/node_creation", 100);
+
+            //service client
+            client = n_.serviceClient<mapper::WallInFront>("wall_in_front");
 	}
 
 	void encodersCallback(const ras_arduino_msgs::Encoders::ConstPtr &msg)
@@ -96,9 +101,9 @@ public:
 		//angle = msg->data;
 	}
 
-	void odometryCallback(const geometry_msgs::TwistStamped::ConstPtr &msg) {
+    void odometryCallback(const geometry_msgs::TwistStamped::ConstPtr &msg) {
 		curPosOri = msg->twist;
-		angle = curPosOri.angular.z;
+        angle = curPosOri.angular.z;
 	}
 	
 	//From still, decide what the next mode should be
@@ -164,6 +169,16 @@ public:
 //		ROS_INFO("IR front_right: [%lf]", in_ir.front_right);
 //		ROS_INFO("IR back_right: [%lf]", in_ir.back_right);
 //		ROS_INFO("IR front_center: [%lf]", in_ir.front_center);
+
+        //get wall in front from map
+        mapper::WallInFront srv;
+        srv.request.position.x = curPosOri.linear.x;
+        srv.request.position.y = curPosOri.linear.y;
+        srv.request.angle = angle;
+        bool wallInFront = false;
+        if(client.call(srv)){
+            wallInFront = srv.response.wallInFront;
+        }
 		switch (mode) {
 					
 			case STILL:
@@ -173,7 +188,7 @@ public:
 
 
 			case LEFT_WALL_FOLLOW:
-				if (in_ir.front_center<STOPDIST) {
+                if (in_ir.front_center<STOPDIST || wallInFront) {
 					prevmode=mode;
 					mode = STILL;
 					//Stop and determine how to rotate
@@ -211,7 +226,7 @@ public:
 
 
 			case RIGHT_WALL_FOLLOW:
-				if (in_ir.front_center<STOPDIST) {
+                if (in_ir.front_center<STOPDIST || wallInFront) {
 					prevmode=mode;
 					mode = STILL;
 					ROS_INFO("IR front_center inside switch : [%lf]", in_ir.front_center);
@@ -276,7 +291,7 @@ public:
 
 			case STRAIGHT_FORWARD:
 				//TODO
-				if (in_ir.front_center < STOPDIST) {
+                if (in_ir.front_center < STOPDIST || wallInFront) {
 					prevmode=mode;
 					mode = STILL;	//Stop
 					
