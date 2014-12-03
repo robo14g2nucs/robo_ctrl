@@ -24,7 +24,7 @@ public:
 	ros::Subscriber irSub;
 	ros::Publisher posori_publisher_;
  
-	wheel_tracker_node() : curAngle(0.0), curX(1.4), curY(2.25), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR )
+	wheel_tracker_node() : curAngle(0.0), curX(0.0), curY(0.0), DEGTOM( WHEEL_RADIUS*TWOPI/TICKSPR )
 	{
 		n_ = ros::NodeHandle("~");
 		encoders_subscriber_ = n_.subscribe("/arduino/encoders", 1, &wheel_tracker_node::update, this);
