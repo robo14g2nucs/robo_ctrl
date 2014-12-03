@@ -5,9 +5,9 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Float64.h>
+#include <robo_globals.h>
 #include <std_msgs/Int16.h>
 #include <std_msgs/String.h>
-#include <robo_globals.h>
 #include <cmath>
 
 #define MINDIST 13	//13 centimeters
