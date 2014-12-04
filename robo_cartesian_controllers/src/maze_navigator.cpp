@@ -83,7 +83,7 @@ public:
 			node_creation_publisher_ = n_.advertise<geometry_msgs::Point>("/node_creation", 100);
 
             //service client
-            client = n_.serviceClient<mapper::WallInFront>("wall_in_front");
+            client = n_.serviceClient<mapper::WallInFront>("/wall_in_front");
             updateCounter = 0;
 	}
 
@@ -175,13 +175,17 @@ public:
         //get wall in front from map
         bool wallInFront = false;
         //divide frequency
+        ROS_INFO("get info from map? (counter: %d)", updateCounter);
         if(updateCounter >= 5){
+            ROS_INFO("try to get info from map");
             updateCounter = 0;
             mapper::WallInFront srv;
             srv.request.position.x = curPosOri.linear.x;
             srv.request.position.y = curPosOri.linear.y;
             srv.request.angle = angle;
             if(client.call(srv)){
+                ros::Time now = ros::Time::now();
+                ROS_INFO("wall_in_front request at %d.%d", now.sec, now.nsec);
                 wallInFront = srv.response.wallInFront;
             }
         }
