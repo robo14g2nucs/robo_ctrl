@@ -11,7 +11,7 @@
 #include <cmath>
 #include <mapper/WallInFront.h>
 
-#define MINDIST 13	//13 centimeters
+#define MINDIST 12	//13 centimeters
 #define STOPDIST 17	//17 centimeters
 
 #define IR_SHORT_LIMIT 25
@@ -234,7 +234,7 @@ public:
 				irdiff = in_ir.front_left - in_ir.back_left;
 				
 				out_twist.angular.z = alpha * (irdiff);// [m/s]
-				if(fabs(MINDIST-irav) > 1)		
+				if(fabs(MINDIST-irav) > 0.5)		
 					out_twist.angular.z += alpha1 * (irav - MINDIST);
 					
 				//out_twist.angular.z = alpha * (irav - MINDIST + (alpha1 * irdiff)); // [m/s]
@@ -269,7 +269,7 @@ public:
 				irdiff = in_ir.front_right - in_ir.back_right;
 				
 				out_twist.angular.z = - alpha * (irdiff);// [m/s]
-				if(fabs(MINDIST-irav) > 1)		
+				if(fabs(MINDIST-irav) > 0.5)		
 					out_twist.angular.z += alpha1 * (-irav + MINDIST);
 				//out_twist.angular.z = alpha * ( MINDIST - (irav)  - (alpha1 * irdiff)); // [m/s]
 				out_twist.linear.x = v;
