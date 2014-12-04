@@ -19,7 +19,7 @@
   <node pkg="navigation_plotter" type="navigation_plotter_node" name="navigation_plotter_node" output="screen"/>
   
   <!-- execute maze_mapping -->
-  <node pkg="robo_cartesian_controllers" type="maze_mapping" name="maze_mapping" output="screen"/>
+<!--  <node pkg="robo_cartesian_controllers" type="maze_mapping" name="maze_mapping" output="screen"/> -->
 
 </launch>
 
