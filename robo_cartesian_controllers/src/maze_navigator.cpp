@@ -187,6 +187,12 @@ public:
                 ros::Time now = ros::Time::now();
                 ROS_INFO("wall_in_front request at %d.%d", now.sec, now.nsec);
                 wallInFront = srv.response.wallInFront;
+                if(wallInFront){
+                    ROS_INFO("WALL IN FRONT");
+                }
+                else{
+                    ROS_INFO("everything free");
+                }
             }
         }
         else{
