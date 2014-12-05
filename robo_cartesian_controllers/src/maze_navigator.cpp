@@ -47,7 +47,8 @@ private:
 	int prevmode; // Rohit: to know the previous mode
 	bool followsPath;	//Tells whether the robot is following a path (true), or exploring (false).
 	geometry_msgs::Point targetPos;	//The current target position, if following a path.
-	std::list<geometry_msgs::Point> path;
+	std::list<geometry_msgs::Point> path;	//The path to the currently wanted object
+	std::string goalObject;	//The object currently wanted
 	
 	double alpha, alpha1; // P gain {left, right}	//DON'T CHANGE THIS DURING RUNTIME
 	double alpha_align;
@@ -78,7 +79,7 @@ public:
 	ros::Publisher twist_publisher_, mode_publisher_, prev_mode_publisher_, node_creation_publisher_;
 								//alpha(0.0177) for wall-following without reference distance
 								//alpha(0.0245), alpha1(2.53586),
-	maze_navigator_node() : alpha(0.0175), alpha1(0.01), alpha_align(0.0195), v(.17), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD)
+	maze_navigator_node() : alpha(0.0175), alpha1(0.01), alpha_align(0.0195), v(.17), w(0), mode(STRAIGHT_FORWARD), prevmode(STRAIGHT_FORWARD), goalObject("red cube")
 	{
 		
 		pathClient = n_.serviceClient<mapper::PathToObject>("path_to_object");
@@ -126,7 +127,24 @@ public:
 	int decideNextMode() {
 		
 		if (followsPath) {
-			//TODO Check if we have arrived
+			
+			if (path.empty()) {
+				//Find a path to the new goal
+				mapper::PathToObject srv;
+				srv.request.start.x = curPosOri.linear.x;
+				srv.request.start.y = curPosOri.linear.y;
+				srv.request.object.data = goalObject.c_str();	//Dummy object
+				
+				if (pathClient.call(srv)) {
+					path.clear();
+					for (int i = 0;i<srv.response.length.data;++i) {
+						path.push_back(srv.response.path[i]);
+					}
+				}
+			}
+			
+			
+			//Check if we have arrived
 			if (fabs(curPosOri.linear.x - targetPos.x) <= NODE_DIST_LIMIT && 
 			fabs(curPosOri.linear.y - targetPos.y) <= NODE_DIST_LIMIT) {
 				//Close enough
@@ -162,6 +180,8 @@ public:
 						//We shouldn't go there - just observe from where we are standing.
 						//TODO Decide what to do next. I don't know if we will be given a new object
 						//to find the path to, or if something else should be done.
+					} else {
+						mode = STRAIGHT_FORWARD;
 					}
 				} else if (dir == (curDir+1)%4) {	//Rotate left
 					mode = LEFT_ROTATE;
