@@ -261,9 +261,10 @@ public:
 		//get wall in front from map
 		bool wallInFront = false;
 		//divide frequency
-		ROS_INFO("get info from map? (counter: %d)", updateCounter);
+
+	//	ROS_INFO("get info from map? (counter: %d)", updateCounter);
 		if(updateCounter >= 5){
-			ROS_INFO("try to get info from map");
+	//	ROS_INFO("try to get info from map");
 			updateCounter = 0;
 			mapper::WallInFront srv;
 			srv.request.position.x = curPosOri.linear.x;
@@ -271,13 +272,13 @@ public:
 			srv.request.angle = angle;
 			if(client.call(srv)){
 				ros::Time now = ros::Time::now();
-				ROS_INFO("wall_in_front request at %d.%d", now.sec, now.nsec);
+				//ROS_INFO("wall_in_front request at %d.%d", now.sec, now.nsec);
 				wallInFront = srv.response.wallInFront;
 				if(wallInFront){
-					ROS_INFO("WALL IN FRONT");
+					//ROS_INFO("WALL IN FRONT");
 				}
 				else{
-					ROS_INFO("everything free");
+					//ROS_INFO("everything free");
 				}
 			}
 		}
@@ -297,7 +298,7 @@ public:
 					prevmode=mode;
 					mode = STILL;
 					//Stop and determine how to rotate
-					ROS_INFO("IR front_center inside switch : [%lf]", in_ir.front_center);
+	//				ROS_INFO("IR front_center inside switch : [%lf]", in_ir.front_center);
 					
 					//Advertise node creation request
 					if (!followsPath) {
@@ -338,7 +339,7 @@ public:
 				if (in_ir.front_center<STOPDIST || wallInFront) {
 					prevmode=mode;
 					mode = STILL;
-					ROS_INFO("IR front_center inside switch : [%lf]", in_ir.front_center);
+	//				ROS_INFO("IR front_center inside switch : [%lf]", in_ir.front_center);
 					
 					//Advertise node creation request
 					if (!followsPath) {
@@ -380,8 +381,8 @@ public:
 					prevmode = mode;
 					mode = STILL;
 				}	
-				out_twist.angular.z = 0.8;	
-				//out_twist.angular.z = ((M_PI_2-fabs(angle-refAngle))*1.5) + 0.6;			
+				out_twist.angular.z = 1;	
+	//			out_twist.angular.z = ((M_PI_2-fabs(angle-refAngle))*1.5) + 0.6;	
 				out_twist.linear.x = 0.0;
 				break;
 
@@ -396,8 +397,8 @@ public:
 					prevmode = mode;
 					mode = STILL;
 				}
-				//out_twist.angular.z = -((M_PI_2-fabs(angle-refAngle))*1.5) - 0.6;
-				out_twist.angular.z = -0.8;//-(M_PI_2-fabs(angle-refAngle))*.8;
+//					out_twist.angular.z = -((M_PI_2-fabs(angle-refAngle))*1.5) - 0.6;
+				out_twist.angular.z = -1;//-(M_PI_2-fabs(angle-refAngle))*.8;
 				out_twist.linear.x = 0.0;
 				break;
 
@@ -466,9 +467,9 @@ public:
 		twist_publisher_.publish(out_twist);
 		mode_publisher_.publish(out_mode);
 		prev_mode_publisher_.publish(out_previous_mode);
-		ROS_INFO("the twist is = %lf", out_twist.angular.z);
-		ROS_INFO("The current mode is %s", MODE_NAMES[mode]);
-		ROS_INFO("The previous mode is %s", MODE_NAMES[prevmode]);
+//		ROS_INFO("the twist is = %lf", out_twist.angular.z);
+//		ROS_INFO("The current mode is %s", MODE_NAMES[mode]);
+//		ROS_INFO("The previous mode is %s", MODE_NAMES[prevmode]);
 	}
 };
 
